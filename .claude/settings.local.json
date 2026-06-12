@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(scrapy crawl *)",
+      "Bash(pip install *)",
+      "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(python -c \"import Brotli; print\\('Brotli ok'\\)\")",
+      "Bash(python -c \"from brotli import decompress; print\\('ok'\\)\")",
+      "Bash(G:/Miniconda3/python.exe -m pip install brotli)",
+      "Bash(python -c \"import brotli; print\\('brotli', brotli.__version__, 'ok'\\)\")"
+    ]
+  }
+}
