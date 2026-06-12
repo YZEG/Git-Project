@@ -160,7 +160,7 @@
         th:nth-child(3), td:nth-child(3) { width: 10%; min-width: 70px; }
         th:nth-child(4), td:nth-child(4) { width: 70px; min-width: 70px; }
         th:nth-child(5), td:nth-child(5) { width: 15%; min-width: 90px; }
-        th:nth-child(6), td:nth-child(6) { width: 140px; min-width: 140px; }
+        th:nth-child(6), td:nth-child(6) { width: 100px; min-width: 100px; }
         .actions-cell {
             display: flex;
             gap: 4px;
@@ -178,6 +178,14 @@
         }
         tr:hover {
             background: #f8f9fa;
+        }
+        .book-name-link {
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .book-name-link:hover {
+            color: #764ba2;
         }
         .status-badge {
             padding: 4px 12px;
@@ -382,10 +390,6 @@
                         <option value="author_desc">作者降序</option>
                     </select>
                 </div>
-                <div class="search-actions">
-                    <button class="btn btn-success btn-sm" onclick="doSearch()">搜索</button>
-                    <button class="btn btn-warning btn-sm" onclick="resetSearch()">重置</button>
-                </div>
             </div>
         </div>
 
@@ -563,8 +567,8 @@
             }
         }
 
-        // 执行高级搜索
-        async function doSearch() {
+        // 执行高级搜索（带防抖）
+        const debouncedSearch = debounce(async function() {
             const sortValue = document.getElementById('search-sort').value;
             const [sort_by, sort_order] = sortValue.split('_');
             
@@ -582,19 +586,15 @@
             
             currentPage = 1;
             await loadBooks(1);
-        }
+        }, 300);
 
-        // 重置搜索条件
-        function resetSearch() {
-            document.getElementById('search-name').value = '';
-            document.getElementById('search-author').value = '';
-            document.getElementById('search-status').value = '';
-            document.getElementById('search-tag').value = '';
-            document.getElementById('search-sort').value = 'id_asc';
-            
-            currentSearchParams = {};
-            currentPage = 1;
-            loadBooks(1);
+        // 初始化实时搜索事件监听
+        function initRealTimeSearch() {
+            document.getElementById('search-name').addEventListener('input', debouncedSearch);
+            document.getElementById('search-author').addEventListener('input', debouncedSearch);
+            document.getElementById('search-status').addEventListener('change', debouncedSearch);
+            document.getElementById('search-tag').addEventListener('input', debouncedSearch);
+            document.getElementById('search-sort').addEventListener('change', debouncedSearch);
         }
 
         // 渲染书籍列表
@@ -611,12 +611,11 @@
                 tbody.innerHTML += `
                     <tr>
                         <td>${book.id}</td>
-                        <td>${book.name}</td>
+                        <td><span class="book-name-link" onclick="showDetail(${book.id})">${book.name}</span></td>
                         <td>${book.author}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                         <td>${book.tags || '-'}</td>
                         <td class="actions-cell">
-                            <button class="btn btn-xs btn-primary" onclick="showDetail(${book.id})">详情</button>
                             <button class="btn btn-xs btn-warning" onclick="showEditModal(${book.id})">编辑</button>
                             <button class="btn btn-xs btn-danger" onclick="deleteBook(${book.id})">删除</button>
                         </td>
@@ -812,6 +811,7 @@
                 return;
             }
             loadBooks();
+            initRealTimeSearch();
         });
     </script>
 </body>
