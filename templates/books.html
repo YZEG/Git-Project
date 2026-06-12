@@ -11,199 +11,176 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f8f9fa;
             min-height: 100vh;
+            line-height: 1.6;
         }
         .sidebar {
-            width: 250px;
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            width: 160px;
+            background: #2c3e50;
             min-height: 100vh;
             position: fixed;
             left: 0;
             top: 0;
-            padding: 20px;
-            color: white;
+            padding: 20px 0;
+            color: #ecf0f1;
         }
         .sidebar h2 {
-            font-size: 22px;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
+            font-size: 16px;
+            margin-bottom: 20px;
+            padding: 0 12px;
+            font-weight: 500;
+            letter-spacing: 1px;
         }
         .sidebar .nav-item {
             display: block;
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 8px;
+            padding: 10px 12px;
             text-decoration: none;
-            color: white;
-            transition: all 0.3s ease;
-            font-weight: 500;
+            color: #bdc3c7;
+            transition: all 0.2s ease;
+            font-size: 13px;
         }
         .sidebar .nav-item:hover {
-            background: rgba(255,255,255,0.2);
+            background: #34495e;
+            color: #ecf0f1;
         }
         .sidebar .nav-item.active {
-            background: rgba(255,255,255,0.3);
+            background: #3498db;
+            color: white;
         }
         .sidebar .logout-btn {
-            margin-top: 30px;
-            padding: 12px 15px;
+            margin-top: 24px;
+            margin-left: 12px;
+            padding: 10px 20px;
             border: none;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            background: #e74c3c;
             color: white;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.3s ease;
-            width: 100%;
+            transition: background 0.2s;
+            width: calc(100% - 24px);
         }
         .sidebar .logout-btn:hover {
-            background: rgba(255,255,255,0.3);
+            background: #c0392b;
         }
         .main-content {
-            margin-left: 250px;
-            padding: 30px;
+            margin-left: 160px;
+            padding: 24px;
         }
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
         .header h1 {
-            color: #333;
-            font-size: 28px;
-        }
-        .header .search-box {
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            width: 250px;
-            font-size: 14px;
-        }
-        .action-bar {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 600;
         }
         .btn {
-            padding: 10px 20px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            gap: 6px;
         }
         .btn-success {
-            background: #10b981;
+            background: #27ae60;
             color: white;
         }
         .btn-success:hover {
-            background: #059669;
+            background: #1e8449;
         }
         .btn-warning {
-            background: #f59e0b;
+            background: #f39c12;
             color: white;
         }
         .btn-warning:hover {
-            background: #d97706;
+            background: #d68910;
         }
         .btn-danger {
-            background: #ef4444;
+            background: #e74c3c;
             color: white;
         }
         .btn-danger:hover {
-            background: #dc2626;
+            background: #c0392b;
+        }
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
         }
         .btn-sm {
-            padding: 6px 12px;
+            padding: 5px 12px;
             font-size: 12px;
+        }
+        .btn-xs {
+            padding: 3px 8px;
+            font-size: 11px;
+            min-width: 36px;
         }
         .table-container {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            overflow-x: auto;
-            overflow-y: auto;
-            max-height: calc(100vh - 280px);
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
         }
         table {
             width: 100%;
-            min-width: 800px;
             border-collapse: collapse;
         }
         th, td {
-            padding: 12px 15px;
+            padding: 12px 16px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid #f0f0f0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        th:nth-child(1), td:nth-child(1) { width: 50px; min-width: 50px; }
-        th:nth-child(2), td:nth-child(2) { width: 15%; min-width: 100px; }
-        th:nth-child(3), td:nth-child(3) { width: 10%; min-width: 70px; }
-        th:nth-child(4), td:nth-child(4) { width: 70px; min-width: 70px; }
-        th:nth-child(5), td:nth-child(5) { width: 15%; min-width: 90px; }
-        th:nth-child(6), td:nth-child(6) { width: 100px; min-width: 100px; }
-        .actions-cell {
-            display: flex;
-            gap: 4px;
-            flex-wrap: nowrap;
-        }
-        .btn-xs {
-            padding: 4px 8px;
-            font-size: 11px;
-            min-width: 40px;
-        }
         th {
-            background: #f8f9fa;
+            background: #fafafa;
             font-weight: 600;
             color: #555;
+            font-size: 13px;
         }
         tr:hover {
-            background: #f8f9fa;
+            background: #fafafa;
         }
         .book-name-link {
-            color: #667eea;
+            color: #3498db;
             cursor: pointer;
-            text-decoration: underline;
+            text-decoration: none;
+            font-weight: 500;
         }
         .book-name-link:hover {
-            color: #764ba2;
+            text-decoration: underline;
+            color: #2980b9;
         }
         .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
+            padding: 3px 10px;
+            border-radius: 4px;
             font-size: 12px;
             font-weight: 500;
         }
         .status-active {
-            background: #dcfce7;
-            color: #16a34a;
+            background: #d5f4e6;
+            color: #1e8449;
         }
         .status-completed {
-            background: #e0e7ff;
-            color: #4338ca;
+            background: #ebf5fb;
+            color: #2980b9;
         }
         .status-unknown {
-            background: #fef3c7;
-            color: #d97706;
+            background: #fef5e7;
+            color: #d68910;
         }
         .modal-overlay {
             display: none;
@@ -212,7 +189,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.4);
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -222,44 +199,57 @@
         }
         .modal {
             background: white;
-            border-radius: 12px;
+            border-radius: 6px;
             width: 90%;
-            max-width: 500px;
-            padding: 30px;
+            max-width: 480px;
+            padding: 24px;
             position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         .modal .close-btn {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 30px;
-            height: 30px;
+            top: 12px;
+            right: 12px;
+            width: 28px;
+            height: 28px;
             border: none;
-            background: #eee;
+            background: #f5f5f5;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
             color: #666;
+            transition: background 0.2s;
+        }
+        .modal .close-btn:hover {
+            background: #e0e0e0;
         }
         .modal h2 {
-            margin-bottom: 25px;
-            color: #333;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 600;
         }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         .form-group label {
             display: block;
-            margin-bottom: 8px;
-            color: #333;
+            margin-bottom: 6px;
+            color: #444;
             font-weight: 500;
+            font-size: 14px;
         }
         .form-group input, .form-group textarea, .form-group select {
             width: 100%;
-            padding: 12px 15px;
+            padding: 10px 12px;
             border: 1px solid #ddd;
-            border-radius: 8px;
+            border-radius: 4px;
             font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
         }
         .form-group textarea {
             resize: vertical;
@@ -267,79 +257,92 @@
         }
         .modal-actions {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             justify-content: flex-end;
-            margin-top: 30px;
+            margin-top: 24px;
         }
         .pagination {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 8px;
+            margin-top: 16px;
         }
         .pagination button {
-            padding: 8px 15px;
+            padding: 6px 12px;
             border: 1px solid #ddd;
             background: white;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
         }
         .pagination button.active {
-            background: #667eea;
+            background: #3498db;
             color: white;
-            border-color: #667eea;
+            border-color: #3498db;
+        }
+        .pagination button:hover:not(:disabled) {
+            background: #f0f0f0;
         }
         .pagination button:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
         }
         .search-panel {
             background: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 16px;
         }
         .search-row {
             display: flex;
-            gap: 15px;
+            gap: 16px;
             align-items: center;
             flex-wrap: wrap;
         }
         .search-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
         }
         .search-group label {
-            font-size: 13px;
+            font-size: 12px;
             color: #666;
             font-weight: 500;
         }
         .search-group input, .search-group select {
-            padding: 8px 12px;
+            padding: 7px 10px;
             border: 1px solid #ddd;
-            border-radius: 6px;
+            border-radius: 4px;
             font-size: 13px;
             min-width: 120px;
         }
-        .search-actions {
-            display: flex;
-            gap: 10px;
-            align-items: flex-end;
+        .search-group input:focus, .search-group select:focus {
+            outline: none;
+            border-color: #3498db;
         }
         .stats-bar {
-            background: #f0f9ff;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            color: #0369a1;
-            font-size: 14px;
+            background: #ebf5fb;
+            padding: 10px 14px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            color: #2980b9;
+            font-size: 13px;
         }
         .stats-bar strong {
-            color: #0284c7;
-            font-size: 18px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .actions-cell {
+            display: flex;
+            gap: 4px;
         }
     </style>
 </head>
@@ -356,16 +359,15 @@
             <h1 id="page-title">书籍列表</h1>
         </div>
 
-        <!-- 高级搜索区域 -->
         <div id="advanced-search" class="search-panel">
             <div class="search-row">
                 <div class="search-group">
                     <label>书名</label>
-                    <input type="text" id="search-name" placeholder="精确搜索书名">
+                    <input type="text" id="search-name" placeholder="书名关键词">
                 </div>
                 <div class="search-group">
                     <label>作者</label>
-                    <input type="text" id="search-author" placeholder="精确搜索作者">
+                    <input type="text" id="search-author" placeholder="作者关键词">
                 </div>
                 <div class="search-group">
                     <label>状态</label>
@@ -377,7 +379,7 @@
                 </div>
                 <div class="search-group">
                     <label>标签</label>
-                    <input type="text" id="search-tag" placeholder="包含标签">
+                    <input type="text" id="search-tag" placeholder="标签关键词">
                 </div>
                 <div class="search-group">
                     <label>排序</label>
@@ -393,18 +395,11 @@
             </div>
         </div>
 
-        <!-- 搜索结果统计 -->
         <div id="search-stats" class="stats-bar" style="display: none;">
             <span>共找到 <strong id="result-count">0</strong> 条记录</span>
         </div>
 
-        <!-- 书籍列表区域 -->
         <div id="books-section">
-            <div class="action-bar">
-                <button class="btn btn-primary" onclick="showSection('add')">
-                    <span>+</span> 添加书籍
-                </button>
-            </div>
             <div class="table-container">
                 <table>
                     <thead>
@@ -424,41 +419,42 @@
             <div class="pagination" id="pagination"></div>
         </div>
 
-        <!-- 添加书籍区域 -->
         <div id="add-section" style="display: none;">
-            <form id="add-form">
-                <div class="form-group">
-                    <label for="add-name">书名 *</label>
-                    <input type="text" id="add-name" required placeholder="请输入书名">
-                </div>
-                <div class="form-group">
-                    <label for="add-author">作者 *</label>
-                    <input type="text" id="add-author" required placeholder="请输入作者">
-                </div>
-                <div class="form-group">
-                    <label for="add-status">状态</label>
-                    <select id="add-status">
-                        <option value="连载">连载</option>
-                        <option value="完结">完结</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="add-tags">标签</label>
-                    <input type="text" id="add-tags" placeholder="多个标签用逗号分隔">
-                </div>
-                <div class="form-group">
-                    <label for="add-intro">简介</label>
-                    <textarea id="add-intro" placeholder="请输入书籍简介"></textarea>
-                </div>
-                <div class="action-bar">
-                    <button type="submit" class="btn btn-success">保存</button>
-                    <button type="button" class="btn btn-warning" onclick="showSection('books')">取消</button>
-                </div>
-            </form>
+            <div class="table-container" style="padding: 24px;">
+                <h2 style="margin-bottom: 20px; color: #2c3e50; font-size: 18px; font-weight: 600;">添加书籍</h2>
+                <form id="add-form">
+                    <div class="form-group">
+                        <label for="add-name">书名 *</label>
+                        <input type="text" id="add-name" required placeholder="请输入书名">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-author">作者 *</label>
+                        <input type="text" id="add-author" required placeholder="请输入作者">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-status">状态</label>
+                        <select id="add-status">
+                            <option value="连载">连载</option>
+                            <option value="完结">完结</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-tags">标签</label>
+                        <input type="text" id="add-tags" placeholder="多个标签用逗号分隔">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-intro">简介</label>
+                        <textarea id="add-intro" placeholder="请输入书籍简介"></textarea>
+                    </div>
+                    <div class="action-bar">
+                        <button type="submit" class="btn btn-success">保存</button>
+                        <button type="button" class="btn btn-warning" onclick="showSection('books')">取消</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
-    <!-- 更新书籍弹窗 -->
     <div class="modal-overlay" id="edit-modal">
         <div class="modal">
             <button class="close-btn" onclick="closeEditModal()">&times;</button>
@@ -496,7 +492,6 @@
         </div>
     </div>
 
-    <!-- 详情弹窗 -->
     <div class="modal-overlay" id="detail-modal">
         <div class="modal">
             <button class="close-btn" onclick="closeDetailModal()">&times;</button>
@@ -513,10 +508,12 @@
         let totalPages = 1;
         let currentSearchParams = {};
 
-        // 显示指定区域
         function showSection(section) {
             document.getElementById('books-section').style.display = section === 'books' ? 'block' : 'none';
             document.getElementById('add-section').style.display = section === 'add' ? 'block' : 'none';
+            
+            document.getElementById('advanced-search').style.display = section === 'books' ? 'block' : 'none';
+            document.getElementById('search-stats').style.display = section === 'books' ? 'block' : 'none';
             
             document.querySelector('.nav-item.active').classList.remove('active');
             document.querySelector(`[href="#${section}"]`).classList.add('active');
@@ -529,13 +526,10 @@
             }
         }
 
-        // 加载书籍列表
         async function loadBooks(page = 1) {
             try {
-                // 构建URL参数
                 let url = `/api/books?page=${page}`;
                 
-                // 如果有搜索参数，使用搜索接口
                 if (Object.keys(currentSearchParams).length > 0) {
                     const params = new URLSearchParams();
                     params.set('page', page);
@@ -559,7 +553,6 @@
                 renderPagination(data.total_pages, page);
                 currentPage = page;
                 
-                // 显示搜索结果统计
                 document.getElementById('result-count').textContent = data.total;
                 document.getElementById('search-stats').style.display = 'block';
             } catch (error) {
@@ -567,12 +560,10 @@
             }
         }
 
-        // 执行高级搜索（带防抖）
         const debouncedSearch = debounce(async function() {
             const sortValue = document.getElementById('search-sort').value;
             const [sort_by, sort_order] = sortValue.split('_');
             
-            // 使用书名输入框作为关键词（模糊搜索）
             const searchKeyword = document.getElementById('search-name').value;
             
             currentSearchParams = {
@@ -588,7 +579,6 @@
             await loadBooks(1);
         }, 300);
 
-        // 初始化实时搜索事件监听
         function initRealTimeSearch() {
             document.getElementById('search-name').addEventListener('input', debouncedSearch);
             document.getElementById('search-author').addEventListener('input', debouncedSearch);
@@ -597,7 +587,6 @@
             document.getElementById('search-sort').addEventListener('change', debouncedSearch);
         }
 
-        // 渲染书籍列表
         function renderBooks(books) {
             const tbody = document.getElementById('books-table-body');
             tbody.innerHTML = '';
@@ -624,7 +613,6 @@
             });
         }
 
-        // 渲染分页
         function renderPagination(total, current) {
             totalPages = total;
             const pagination = document.getElementById('pagination');
@@ -639,7 +627,6 @@
             pagination.innerHTML += `<button onclick="loadBooks(${current + 1})" ${current >= total ? 'disabled' : ''}>下一页</button>`;
         }
 
-        // 添加书籍
         document.getElementById('add-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -673,7 +660,6 @@
             }
         });
 
-        // 显示编辑弹窗
         async function showEditModal(id) {
             try {
                 const response = await fetch(`/api/books/${id}`, {
@@ -695,13 +681,11 @@
             }
         }
 
-        // 关闭编辑弹窗
         function closeEditModal() {
             document.getElementById('edit-modal').classList.remove('active');
             document.getElementById('edit-form').reset();
         }
 
-        // 更新书籍
         document.getElementById('edit-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -736,7 +720,6 @@
             }
         });
 
-        // 删除书籍
         async function deleteBook(id) {
             if (!confirm('确定要删除这本书吗？')) return;
             
@@ -757,7 +740,6 @@
             }
         }
 
-        // 显示详情弹窗
         async function showDetail(id) {
             try {
                 const response = await fetch(`/api/books/${id}`, {
@@ -781,14 +763,10 @@
             }
         }
 
-        // 关闭详情弹窗
         function closeDetailModal() {
             document.getElementById('detail-modal').classList.remove('active');
         }
 
-
-
-        // 防抖函数
         function debounce(func, delay) {
             let timer = null;
             return function() {
@@ -797,13 +775,11 @@
             };
         }
 
-        // 退出登录
         function logout() {
             localStorage.removeItem('token');
             window.location.href = '/';
         }
 
-        // 页面加载时检查登录状态
         document.addEventListener('DOMContentLoaded', function() {
             const token = localStorage.getItem('token');
             if (!token) {

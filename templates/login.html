@@ -11,8 +11,8 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -20,76 +20,83 @@
         }
         .login-container {
             background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 32px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
+            border: 1px solid #e8e8e8;
         }
         .logo {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 28px;
         }
         .logo h1 {
-            color: #667eea;
-            font-size: 28px;
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
         }
         .logo p {
-            color: #666;
+            color: #888;
             font-size: 14px;
-            margin-top: 5px;
         }
         .form-group {
             margin-bottom: 20px;
         }
         .form-group label {
             display: block;
-            margin-bottom: 8px;
-            color: #333;
+            margin-bottom: 6px;
+            color: #444;
             font-weight: 500;
+            font-size: 14px;
         }
         .form-group input {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s ease;
+            padding: 12px 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        .form-group input::placeholder {
+            color: #bbb;
         }
         .btn {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px;
+            background: #3498db;
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: background 0.2s;
         }
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            background: #2980b9;
         }
         .error-message {
-            background: #fee2e2;
+            background: #fef2f2;
             color: #dc2626;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            padding: 10px 14px;
+            border-radius: 4px;
+            margin-bottom: 16px;
             text-align: center;
+            font-size: 14px;
             display: none;
+            border: 1px solid #fee2e2;
         }
         .footer {
             text-align: center;
-            margin-top: 25px;
-            color: #888;
+            margin-top: 20px;
+            color: #999;
             font-size: 13px;
         }
     </style>
@@ -139,7 +146,6 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    // 登录成功，保存token并跳转
                     localStorage.setItem('token', data.access_token);
                     window.location.href = '/books';
                 } else {
