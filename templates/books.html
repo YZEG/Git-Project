@@ -138,16 +138,38 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: calc(100vh - 280px);
         }
         table {
             width: 100%;
+            min-width: 800px;
             border-collapse: collapse;
         }
         th, td {
-            padding: 15px;
+            padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #eee;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        th:nth-child(1), td:nth-child(1) { width: 50px; min-width: 50px; }
+        th:nth-child(2), td:nth-child(2) { width: 15%; min-width: 100px; }
+        th:nth-child(3), td:nth-child(3) { width: 10%; min-width: 70px; }
+        th:nth-child(4), td:nth-child(4) { width: 70px; min-width: 70px; }
+        th:nth-child(5), td:nth-child(5) { width: 15%; min-width: 90px; }
+        th:nth-child(6), td:nth-child(6) { width: 140px; min-width: 140px; }
+        .actions-cell {
+            display: flex;
+            gap: 4px;
+            flex-wrap: nowrap;
+        }
+        .btn-xs {
+            padding: 4px 8px;
+            font-size: 11px;
+            min-width: 40px;
         }
         th {
             background: #f8f9fa;
@@ -449,10 +471,10 @@
                         <td>${book.author}</td>
                         <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                         <td>${book.tags || '-'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="showDetail(${book.id})">详情</button>
-                            <button class="btn btn-sm btn-warning" onclick="showEditModal(${book.id})">编辑</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteBook(${book.id})">删除</button>
+                        <td class="actions-cell">
+                            <button class="btn btn-xs btn-primary" onclick="showDetail(${book.id})">详情</button>
+                            <button class="btn btn-xs btn-warning" onclick="showEditModal(${book.id})">编辑</button>
+                            <button class="btn btn-xs btn-danger" onclick="deleteBook(${book.id})">删除</button>
                         </td>
                     </tr>
                 `;
