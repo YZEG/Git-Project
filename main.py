@@ -215,22 +215,117 @@ async def get_books(page: int = 1, page_size: int = 10, current_user: User = Dep
     finally:
         conn.close()
 
-# 搜索书籍
+# 搜索书籍（支持多条件）
 @app.get("/api/books/search", response_model=dict, summary="搜索书籍")
-async def search_books(keyword: str, current_user: User = Depends(get_current_active_user)):
-    """根据关键词搜索书籍"""
+async def search_books(
+    keyword: str = None,
+    name: str = None,
+    author: str = None,
+    status: str = None,
+    tag: str = None,
+    page: int = 1,
+    page_size: int = 10,
+    sort_by: str = "id",
+    sort_order: str = "asc",
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    根据多条件搜索书籍
+    
+    参数：
+    - keyword: 关键词（同时搜索书名、作者、标签、简介）
+    - name: 书名（精确匹配）
+    - author: 作者（精确匹配）
+    - status: 状态（连载/完结）
+    - tag: 标签（包含匹配）
+    - page: 页码，默认1
+    - page_size: 每页数量，默认10
+    - sort_by: 排序字段，可选 id/name/author/status，默认id
+    - sort_order: 排序顺序，可选 asc/desc，默认asc
+    """
     conn = get_db_connection()
     try:
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         
-        # 使用LIKE搜索书名、作者、标签
-        cursor.execute(
-            "SELECT * FROM books WHERE name LIKE %s OR author LIKE %s OR tags LIKE %s ORDER BY id",
-            (f"%{keyword}%", f"%{keyword}%", f"%{keyword}%")
-        )
+        # 构建查询条件
+        conditions = []
+        params = []
+        
+        # 关键词搜索（模糊匹配书名、作者、标签、简介）
+        if keyword and keyword.strip():
+            conditions.append("(name LIKE %s OR author LIKE %s OR tags LIKE %s OR intro LIKE %s)")
+            keyword_pattern = f"%{keyword.strip()}%"
+            params.extend([keyword_pattern, keyword_pattern, keyword_pattern, keyword_pattern])
+        
+        # 书名精确搜索
+        if name and name.strip():
+            conditions.append("name = %s")
+            params.append(name.strip())
+        
+        # 作者模糊搜索
+        if author and author.strip():
+            conditions.append("author LIKE %s")
+            params.append(f"%{author.strip()}%")
+        
+        # 状态筛选
+        if status and status.strip() and status.strip() in ["连载", "完结"]:
+            conditions.append("status = %s")
+            params.append(status.strip())
+        
+        # 标签包含搜索
+        if tag and tag.strip():
+            conditions.append("tags LIKE %s")
+            params.append(f"%{tag.strip()}%")
+        
+        # 构建SQL语句
+        if conditions:
+            where_clause = "WHERE " + " AND ".join(conditions)
+        else:
+            where_clause = ""
+        
+        # 验证排序字段
+        valid_sort_fields = ["id", "name", "author", "status"]
+        if sort_by not in valid_sort_fields:
+            sort_by = "id"
+        
+        # 验证排序顺序
+        if sort_order not in ["asc", "desc"]:
+            sort_order = "asc"
+        
+        # 先获取总记录数
+        count_sql = f"SELECT COUNT(*) as total FROM books {where_clause}"
+        cursor.execute(count_sql, params)
+        total = cursor.fetchone()["total"]
+        
+        # 计算分页参数
+        offset = (page - 1) * page_size
+        
+        # 获取当前页数据
+        query_sql = f"""
+            SELECT * FROM books {where_clause} 
+            ORDER BY {sort_by} {sort_order} 
+            LIMIT %s OFFSET %s
+        """
+        params.extend([page_size, offset])
+        cursor.execute(query_sql, params)
         books = cursor.fetchall()
         
-        return {"books": books, "total": len(books)}
+        # 计算总页数
+        total_pages = (total + page_size - 1) // page_size
+        
+        return {
+            "books": books, 
+            "total": total, 
+            "total_pages": total_pages, 
+            "current_page": page,
+            "search_params": {
+                "keyword": keyword,
+                "name": name,
+                "author": author,
+                "status": status,
+                "tag": tag
+            }
+        }
     finally:
         conn.close()
 

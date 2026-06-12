@@ -286,6 +286,53 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        .search-panel {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .search-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .search-group label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+        .search-group input, .search-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            min-width: 120px;
+        }
+        .search-actions {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .stats-bar {
+            background: #f0f9ff;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            color: #0369a1;
+            font-size: 14px;
+        }
+        .stats-bar strong {
+            color: #0284c7;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
@@ -299,7 +346,52 @@
     <div class="main-content">
         <div class="header">
             <h1 id="page-title">书籍列表</h1>
-            <input type="text" class="search-box" placeholder="搜索书籍..." id="search-input">
+        </div>
+
+        <!-- 高级搜索区域 -->
+        <div id="advanced-search" class="search-panel">
+            <div class="search-row">
+                <div class="search-group">
+                    <label>书名</label>
+                    <input type="text" id="search-name" placeholder="精确搜索书名">
+                </div>
+                <div class="search-group">
+                    <label>作者</label>
+                    <input type="text" id="search-author" placeholder="精确搜索作者">
+                </div>
+                <div class="search-group">
+                    <label>状态</label>
+                    <select id="search-status">
+                        <option value="">全部</option>
+                        <option value="连载">连载</option>
+                        <option value="完结">完结</option>
+                    </select>
+                </div>
+                <div class="search-group">
+                    <label>标签</label>
+                    <input type="text" id="search-tag" placeholder="包含标签">
+                </div>
+                <div class="search-group">
+                    <label>排序</label>
+                    <select id="search-sort">
+                        <option value="id_asc">ID升序</option>
+                        <option value="id_desc">ID降序</option>
+                        <option value="name_asc">书名升序</option>
+                        <option value="name_desc">书名降序</option>
+                        <option value="author_asc">作者升序</option>
+                        <option value="author_desc">作者降序</option>
+                    </select>
+                </div>
+                <div class="search-actions">
+                    <button class="btn btn-success btn-sm" onclick="doSearch()">搜索</button>
+                    <button class="btn btn-warning btn-sm" onclick="resetSearch()">重置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 搜索结果统计 -->
+        <div id="search-stats" class="stats-bar" style="display: none;">
+            <span>共找到 <strong id="result-count">0</strong> 条记录</span>
         </div>
 
         <!-- 书籍列表区域 -->
@@ -415,6 +507,7 @@
     <script>
         let currentPage = 1;
         let totalPages = 1;
+        let currentSearchParams = {};
 
         // 显示指定区域
         function showSection(section) {
@@ -435,7 +528,20 @@
         // 加载书籍列表
         async function loadBooks(page = 1) {
             try {
-                const response = await fetch(`/api/books?page=${page}`, {
+                // 构建URL参数
+                let url = `/api/books?page=${page}`;
+                
+                // 如果有搜索参数，使用搜索接口
+                if (Object.keys(currentSearchParams).length > 0) {
+                    const params = new URLSearchParams();
+                    params.set('page', page);
+                    Object.entries(currentSearchParams).forEach(([key, value]) => {
+                        if (value) params.set(key, value);
+                    });
+                    url = `/api/books/search?${params.toString()}`;
+                }
+                
+                const response = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 
@@ -448,9 +554,47 @@
                 renderBooks(data.books);
                 renderPagination(data.total_pages, page);
                 currentPage = page;
+                
+                // 显示搜索结果统计
+                document.getElementById('result-count').textContent = data.total;
+                document.getElementById('search-stats').style.display = 'block';
             } catch (error) {
                 console.error('加载书籍失败:', error);
             }
+        }
+
+        // 执行高级搜索
+        async function doSearch() {
+            const sortValue = document.getElementById('search-sort').value;
+            const [sort_by, sort_order] = sortValue.split('_');
+            
+            // 使用书名输入框作为关键词（模糊搜索）
+            const searchKeyword = document.getElementById('search-name').value;
+            
+            currentSearchParams = {
+                keyword: searchKeyword,
+                author: document.getElementById('search-author').value,
+                status: document.getElementById('search-status').value || null,
+                tag: document.getElementById('search-tag').value,
+                sort_by: sort_by,
+                sort_order: sort_order
+            };
+            
+            currentPage = 1;
+            await loadBooks(1);
+        }
+
+        // 重置搜索条件
+        function resetSearch() {
+            document.getElementById('search-name').value = '';
+            document.getElementById('search-author').value = '';
+            document.getElementById('search-status').value = '';
+            document.getElementById('search-tag').value = '';
+            document.getElementById('search-sort').value = 'id_asc';
+            
+            currentSearchParams = {};
+            currentPage = 1;
+            loadBooks(1);
         }
 
         // 渲染书籍列表
@@ -643,23 +787,7 @@
             document.getElementById('detail-modal').classList.remove('active');
         }
 
-        // 搜索功能
-        document.getElementById('search-input').addEventListener('input', debounce(async function() {
-            const keyword = this.value;
-            try {
-                const response = await fetch(`/api/books/search?keyword=${keyword}`, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    renderBooks(data.books);
-                    document.getElementById('pagination').innerHTML = '';
-                }
-            } catch (error) {
-                console.error('搜索失败:', error);
-            }
-        }, 300));
+
 
         // 防抖函数
         function debounce(func, delay) {
