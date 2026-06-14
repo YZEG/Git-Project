@@ -351,6 +351,9 @@
         <h2>📚 书籍管理</h2>
         <a href="#books" class="nav-item active" onclick="showSection('books')">书籍列表</a>
         <a href="#add" class="nav-item" onclick="showSection('add')">添加书籍</a>
+        <h2 style="margin-top: 20px;">👥 用户管理</h2>
+        <a href="#users" class="nav-item" onclick="showSection('users')">用户列表</a>
+        <a href="#add-user" class="nav-item" onclick="showSection('add-user')">添加用户</a>
         <button class="logout-btn" onclick="logout()">退出登录</button>
     </div>
 
@@ -453,6 +456,57 @@
                 </form>
             </div>
         </div>
+
+        <div id="users-section" style="display: none;">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>手机号</th>
+                            <th>权限</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="users-pagination"></div>
+        </div>
+
+        <div id="add-user-section" style="display: none;">
+            <div class="table-container" style="padding: 24px;">
+                <h2 style="margin-bottom: 20px; color: #2c3e50; font-size: 18px; font-weight: 600;">添加用户</h2>
+                <form id="add-user-form">
+                    <div class="form-group">
+                        <label for="add-user-username">用户名 *</label>
+                        <input type="text" id="add-user-username" required placeholder="请输入用户名">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-user-phone">手机号</label>
+                        <input type="text" id="add-user-phone" placeholder="请输入手机号">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-user-password">密码 *</label>
+                        <input type="password" id="add-user-password" required placeholder="请输入密码">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-user-role">权限</label>
+                        <select id="add-user-role">
+                            <option value="user">普通用户</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    <div class="action-bar">
+                        <button type="submit" class="btn btn-success">保存</button>
+                        <button type="button" class="btn btn-warning" onclick="showSection('users')">取消</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <div class="modal-overlay" id="edit-modal">
@@ -503,6 +557,39 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="edit-user-modal">
+        <div class="modal">
+            <button class="close-btn" onclick="closeEditUserModal()">&times;</button>
+            <h2>编辑用户</h2>
+            <form id="edit-user-form">
+                <input type="hidden" id="edit-user-id">
+                <div class="form-group">
+                    <label for="edit-user-username">用户名 *</label>
+                    <input type="text" id="edit-user-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-phone">手机号</label>
+                    <input type="text" id="edit-user-phone">
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-password">密码（留空则不修改）</label>
+                    <input type="password" id="edit-user-password" placeholder="留空则不修改密码">
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-role">权限</label>
+                    <select id="edit-user-role">
+                        <option value="user">普通用户</option>
+                        <option value="admin">管理员</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-success">保存修改</button>
+                    <button type="button" class="btn btn-warning" onclick="closeEditUserModal()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let currentPage = 1;
         let totalPages = 1;
@@ -511,6 +598,8 @@
         function showSection(section) {
             document.getElementById('books-section').style.display = section === 'books' ? 'block' : 'none';
             document.getElementById('add-section').style.display = section === 'add' ? 'block' : 'none';
+            document.getElementById('users-section').style.display = section === 'users' ? 'block' : 'none';
+            document.getElementById('add-user-section').style.display = section === 'add-user' ? 'block' : 'none';
             
             document.getElementById('advanced-search').style.display = section === 'books' ? 'block' : 'none';
             document.getElementById('search-stats').style.display = section === 'books' ? 'block' : 'none';
@@ -518,11 +607,18 @@
             document.querySelector('.nav-item.active').classList.remove('active');
             document.querySelector(`[href="#${section}"]`).classList.add('active');
             
-            document.getElementById('page-title').textContent = 
-                section === 'books' ? '书籍列表' : '添加书籍';
+            const titles = {
+                'books': '书籍列表',
+                'add': '添加书籍',
+                'users': '用户列表',
+                'add-user': '添加用户'
+            };
+            document.getElementById('page-title').textContent = titles[section] || '书籍列表';
             
             if (section === 'books') {
                 loadBooks();
+            } else if (section === 'users') {
+                loadUsers();
             }
         }
 
@@ -773,6 +869,181 @@
                 clearTimeout(timer);
                 timer = setTimeout(func, delay);
             };
+        }
+
+        let currentUserPage = 1;
+        let totalUserPages = 1;
+
+        async function loadUsers(page = 1) {
+            try {
+                const response = await fetch(`/api/users?page=${page}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (response.status === 401) {
+                    window.location.href = '/';
+                    return;
+                }
+
+                const data = await response.json();
+                renderUsers(data.users);
+                renderUserPagination(data.total_pages, page);
+                currentUserPage = page;
+            } catch (error) {
+                console.error('加载用户失败:', error);
+            }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '';
+
+            users.forEach(user => {
+                const roleText = user.role === 'admin' ? '管理员' : '普通用户';
+                const roleClass = user.role === 'admin' ? 'status-active' : 'status-completed';
+                const createdAt = user.created_at ? new Date(user.created_at).toLocaleString('zh-CN') : '-';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.username}</td>
+                        <td>${user.phone || '-'}</td>
+                        <td><span class="status-badge ${roleClass}">${roleText}</span></td>
+                        <td>${createdAt}</td>
+                        <td class="actions-cell">
+                            <button class="btn btn-xs btn-warning" onclick="showEditUserModal(${user.id})">编辑</button>
+                            <button class="btn btn-xs btn-danger" onclick="deleteUser(${user.id})">删除</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderUserPagination(total, current) {
+            totalUserPages = total;
+            const pagination = document.getElementById('users-pagination');
+            pagination.innerHTML = '';
+
+            pagination.innerHTML += `<button onclick="loadUsers(${current - 1})" ${current <= 1 ? 'disabled' : ''}>上一页</button>`;
+
+            for (let i = 1; i <= total; i++) {
+                pagination.innerHTML += `<button onclick="loadUsers(${i})" ${i === current ? 'class="active"' : ''}>${i}</button>`;
+            }
+
+            pagination.innerHTML += `<button onclick="loadUsers(${current + 1})" ${current >= total ? 'disabled' : ''}>下一页</button>`;
+        }
+
+        document.getElementById('add-user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const user = {
+                username: document.getElementById('add-user-username').value,
+                phone: document.getElementById('add-user-phone').value || null,
+                password: document.getElementById('add-user-password').value,
+                role: document.getElementById('add-user-role').value
+            };
+
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(user)
+                });
+
+                if (response.ok) {
+                    alert('添加用户成功');
+                    showSection('users');
+                    document.getElementById('add-user-form').reset();
+                } else {
+                    const data = await response.json();
+                    alert('添加用户失败: ' + (data.detail || '未知错误'));
+                }
+            } catch (error) {
+                alert('添加用户失败');
+            }
+        });
+
+        async function showEditUserModal(id) {
+            try {
+                const response = await fetch(`/api/users/${id}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    document.getElementById('edit-user-id').value = user.id;
+                    document.getElementById('edit-user-username').value = user.username;
+                    document.getElementById('edit-user-phone').value = user.phone || '';
+                    document.getElementById('edit-user-role').value = user.role;
+                    document.getElementById('edit-user-modal').classList.add('active');
+                }
+            } catch (error) {
+                console.error('获取用户信息失败:', error);
+            }
+        }
+
+        function closeEditUserModal() {
+            document.getElementById('edit-user-modal').classList.remove('active');
+            document.getElementById('edit-user-form').reset();
+        }
+
+        document.getElementById('edit-user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('edit-user-id').value;
+            const password = document.getElementById('edit-user-password').value;
+            
+            const user = {
+                username: document.getElementById('edit-user-username').value,
+                phone: document.getElementById('edit-user-phone').value || null,
+                password: password || '******',
+                role: document.getElementById('edit-user-role').value
+            };
+
+            try {
+                const response = await fetch(`/api/users/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(user)
+                });
+
+                if (response.ok) {
+                    alert('更新成功');
+                    closeEditUserModal();
+                    loadUsers(currentUserPage);
+                } else {
+                    const data = await response.json();
+                    alert('更新失败: ' + (data.detail || '未知错误'));
+                }
+            } catch (error) {
+                alert('更新失败');
+            }
+        });
+
+        async function deleteUser(id) {
+            if (!confirm('确定要删除该用户吗？')) return;
+
+            try {
+                const response = await fetch(`/api/users/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                if (response.ok) {
+                    alert('删除成功');
+                    loadUsers(currentUserPage);
+                } else {
+                    alert('删除失败');
+                }
+            } catch (error) {
+                alert('删除失败');
+            }
         }
 
         function logout() {

@@ -88,9 +88,21 @@ class TokenData(BaseModel):
 
 class User(BaseModel):
     username: str
-    disabled: Optional[bool] = None
+    phone: Optional[str] = None
+    role: str = "user"
 
-class UserInDB(User):
+class UserCreate(BaseModel):
+    username: str
+    phone: Optional[str] = None
+    password: str
+    role: str = "user"
+
+class UserResponse(User):
+    model_config = {"from_attributes": True}
+    id: int
+    created_at: Optional[datetime] = None
+
+class UserInDB(UserResponse):
     password: str
 
 def get_db_connection():
@@ -101,15 +113,22 @@ def get_db_connection():
     except pymysql.Error as e:
         raise HTTPException(status_code=500, detail=f"数据库连接失败: {str(e)}")
 
-def get_user(db, username: str):
-    """获取用户"""
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(**user_dict)
+def get_user_from_db(username: str):
+    """从数据库获取用户"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cursor.fetchone()
+        if user:
+            return UserInDB(**user)
+        return None
+    finally:
+        conn.close()
 
-def authenticate_user(fake_db, username: str, password: str):
-    """认证用户"""
-    user = get_user(fake_db, username)
+def authenticate_user_db(username: str, password: str):
+    """从数据库认证用户"""
+    user = get_user_from_db(username)
     if not user:
         return False
     if password != user.password:
@@ -142,15 +161,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = get_user(fake_users_db, username=token_data.username)
+    user = get_user_from_db(username=token_data.username)
     if user is None:
         raise credentials_exception
     return user
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
+async def get_current_active_user(current_user: UserInDB = Depends(get_current_user)):
     """获取当前活跃用户"""
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="用户已禁用")
+    return current_user
+
+async def get_current_admin(current_user: UserInDB = Depends(get_current_user)):
+    """获取当前管理员用户（仅管理员可访问）"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无管理员权限")
     return current_user
 
 # 登录页面
@@ -175,12 +198,18 @@ class LoginRequest(BaseModel):
 # 用户登录API
 @app.post("/api/login", response_model=Token, summary="用户登录")
 async def login(login_data: LoginRequest):
-    """用户登录，返回JWT令牌"""
-    user = authenticate_user(fake_users_db, login_data.username, login_data.password)
+    """用户登录，返回JWT令牌（仅管理员可登录）"""
+    user = authenticate_user_db(login_data.username, login_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="非管理员用户无法登录",
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -428,6 +457,230 @@ async def delete_book(book_id: int, current_user: User = Depends(get_current_act
     finally:
         conn.close()
 
+# 用户管理API
+
+@app.get("/api/users", response_model=dict, summary="获取用户列表")
+async def get_users(
+    page: int = 1, 
+    page_size: int = 10, 
+    current_user: UserInDB = Depends(get_current_admin)
+):
+    """获取用户列表（支持分页）"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        cursor.execute("SELECT COUNT(*) as total FROM users")
+        total = cursor.fetchone()["total"]
+        
+        offset = (page - 1) * page_size
+        
+        cursor.execute("SELECT id, username, phone, role, created_at FROM users ORDER BY id LIMIT %s OFFSET %s", (page_size, offset))
+        users = cursor.fetchall()
+        
+        total_pages = (total + page_size - 1) // page_size
+        
+        return {"users": users, "total": total, "total_pages": total_pages, "current_page": page}
+    finally:
+        conn.close()
+
+@app.get("/api/users/{user_id}", response_model=UserResponse, summary="获取单个用户")
+async def get_user(user_id: int, current_user: UserInDB = Depends(get_current_admin)):
+    """根据ID获取用户详情"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT id, username, phone, role, created_at FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        return user
+    finally:
+        conn.close()
+
+@app.post("/api/users", response_model=UserResponse, status_code=201, summary="创建用户")
+async def create_user(user: UserCreate, current_user: UserInDB = Depends(get_current_admin)):
+    """创建新用户"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        cursor.execute("SELECT id FROM users WHERE username = %s", (user.username,))
+        if cursor.fetchone():
+            raise HTTPException(status_code=400, detail="用户名已存在")
+        
+        if user.phone:
+            cursor.execute("SELECT id FROM users WHERE phone = %s", (user.phone,))
+            if cursor.fetchone():
+                raise HTTPException(status_code=400, detail="手机号已被使用")
+        
+        if user.role not in ["admin", "user"]:
+            raise HTTPException(status_code=400, detail="无效的角色类型")
+        
+        cursor.execute(
+            "INSERT INTO users (username, phone, password, role) VALUES (%s, %s, %s, %s)",
+            (user.username, user.phone, user.password, user.role)
+        )
+        conn.commit()
+        
+        user_id = cursor.lastrowid
+        
+        cursor.execute("SELECT id, username, phone, role, created_at FROM users WHERE id = %s", (user_id,))
+        new_user = cursor.fetchone()
+        
+        return new_user
+    finally:
+        conn.close()
+
+@app.put("/api/users/{user_id}", response_model=UserResponse, summary="更新用户")
+async def update_user(user_id: int, user: UserCreate, current_user: UserInDB = Depends(get_current_admin)):
+    """更新用户信息"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+        existing_user = cursor.fetchone()
+        
+        if not existing_user:
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        if user.username != existing_user['username']:
+            cursor.execute("SELECT id FROM users WHERE username = %s AND id != %s", (user.username, user_id))
+            if cursor.fetchone():
+                raise HTTPException(status_code=400, detail="用户名已存在")
+        
+        if user.phone and user.phone != existing_user['phone']:
+            cursor.execute("SELECT id FROM users WHERE phone = %s AND id != %s", (user.phone, user_id))
+            if cursor.fetchone():
+                raise HTTPException(status_code=400, detail="手机号已被使用")
+        
+        if user.role not in ["admin", "user"]:
+            raise HTTPException(status_code=400, detail="无效的角色类型")
+        
+        if user.password == '******':
+            cursor.execute(
+                "UPDATE users SET username = %s, phone = %s, role = %s WHERE id = %s",
+                (user.username, user.phone, user.role, user_id)
+            )
+        else:
+            cursor.execute(
+                "UPDATE users SET username = %s, phone = %s, password = %s, role = %s WHERE id = %s",
+                (user.username, user.phone, user.password, user.role, user_id)
+            )
+        conn.commit()
+        
+        cursor.execute("SELECT id, username, phone, role, created_at FROM users WHERE id = %s", (user_id,))
+        updated_user = cursor.fetchone()
+        
+        return updated_user
+    finally:
+        conn.close()
+
+@app.delete("/api/users/{user_id}", status_code=204, summary="删除用户")
+async def delete_user(user_id: int, current_user: UserInDB = Depends(get_current_admin)):
+    """删除用户"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        conn.commit()
+        
+        return None
+    finally:
+        conn.close()
+
+# 用户收藏书籍API
+
+@app.get("/api/users/{user_id}/favorites", response_model=dict, summary="获取用户收藏")
+async def get_user_favorites(
+    user_id: int,
+    page: int = 1,
+    page_size: int = 10,
+    current_user: UserInDB = Depends(get_current_admin)
+):
+    """获取用户收藏的书籍"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        
+        cursor.execute("SELECT COUNT(*) as total FROM user_favorites WHERE user_id = %s", (user_id,))
+        total = cursor.fetchone()["total"]
+        
+        offset = (page - 1) * page_size
+        
+        cursor.execute("""
+            SELECT b.* FROM user_favorites f
+            JOIN books b ON f.book_id = b.id
+            WHERE f.user_id = %s
+            ORDER BY f.created_at DESC
+            LIMIT %s OFFSET %s
+        """, (user_id, page_size, offset))
+        books = cursor.fetchall()
+        
+        total_pages = (total + page_size - 1) // page_size
+        
+        return {"books": books, "total": total, "total_pages": total_pages, "current_page": page}
+    finally:
+        conn.close()
+
+@app.post("/api/users/{user_id}/favorites/{book_id}", status_code=204, summary="添加收藏")
+async def add_favorite(
+    user_id: int,
+    book_id: int,
+    current_user: UserInDB = Depends(get_current_admin)
+):
+    """为用户添加收藏书籍"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="用户不存在")
+        
+        cursor.execute("SELECT id FROM books WHERE id = %s", (book_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="书籍不存在")
+        
+        try:
+            cursor.execute("INSERT INTO user_favorites (user_id, book_id) VALUES (%s, %s)", (user_id, book_id))
+            conn.commit()
+        except pymysql.IntegrityError:
+            raise HTTPException(status_code=400, detail="该书籍已被收藏")
+        
+        return None
+    finally:
+        conn.close()
+
+@app.delete("/api/users/{user_id}/favorites/{book_id}", status_code=204, summary="取消收藏")
+async def remove_favorite(
+    user_id: int,
+    book_id: int,
+    current_user: UserInDB = Depends(get_current_admin)
+):
+    """取消用户对书籍的收藏"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        
+        cursor.execute("DELETE FROM user_favorites WHERE user_id = %s AND book_id = %s", (user_id, book_id))
+        conn.commit()
+        
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="收藏记录不存在")
+        
+        return None
+    finally:
+        conn.close()
+
 # 健康检查接口
 @app.get("/api/health", summary="健康检查")
 async def health_check():
@@ -441,4 +694,4 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=5001)

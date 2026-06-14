@@ -133,6 +133,7 @@
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const errorElement = document.getElementById('error-message');
             
             try {
                 const response = await fetch('/api/login', {
@@ -149,13 +150,15 @@
                     localStorage.setItem('token', data.access_token);
                     window.location.href = '/books';
                 } else {
-                    document.getElementById('error-message').style.display = 'block';
+                    errorElement.textContent = data.detail || '登录失败';
+                    errorElement.style.display = 'block';
                     setTimeout(() => {
-                        document.getElementById('error-message').style.display = 'none';
+                        errorElement.style.display = 'none';
                     }, 3000);
                 }
             } catch (error) {
-                document.getElementById('error-message').style.display = 'block';
+                errorElement.textContent = '登录失败，请稍后重试';
+                errorElement.style.display = 'block';
             }
         });
     </script>
