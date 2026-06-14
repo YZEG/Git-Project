@@ -30,6 +30,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 # 获取脚本所在目录的绝对路径
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -54,6 +55,15 @@ app = FastAPI(
     title="书籍管理系统",
     description="基于FastAPI的书籍CRUD管理系统",
     version="1.0.0"
+)
+
+# CORS配置
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 静态文件服务
@@ -698,6 +708,35 @@ async def health_check():
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}
 
+def release_port(port):
+    """检测并释放指定端口"""
+    import subprocess
+    import re
+    
+    try:
+        result = subprocess.run(
+            ["netstat", "-ano", "|", "findstr", f":{port}"],
+            capture_output=True,
+            text=True,
+            shell=True
+        )
+        output = result.stdout
+        
+        pids = re.findall(r'LISTENING\s+(\d+)', output)
+        if pids:
+            for pid in pids:
+                try:
+                    subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
+                    print(f"已释放端口 {port}，终止进程 PID: {pid}")
+                except Exception as e:
+                    print(f"终止进程 {pid} 失败: {e}")
+    except Exception as e:
+        print(f"检测端口 {port} 状态时出错: {e}")
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5001)
+    
+    PORT = 5001
+    release_port(PORT)
+    
+    uvicorn.run(app, host="0.0.0.0", port=PORT)

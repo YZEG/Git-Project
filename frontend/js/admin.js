@@ -1,0 +1,533 @@
+const API_BASE_URL = 'http://localhost:5001';
+
+let currentBookPage = 1;
+let currentUserPage = 1;
+let editingBook = null;
+let editingUser = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkLogin();
+    
+    document.getElementById('adminName').textContent = localStorage.getItem('username') || '管理员';
+    
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', function() {
+            switchPage(this.dataset.page);
+        });
+    });
+    
+    document.getElementById('bookForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveBook();
+    });
+    
+    document.getElementById('userForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveUser();
+    });
+    
+    loadBooks();
+});
+
+function checkLogin() {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    
+    if (!token || role !== 'admin') {
+        window.location.href = 'index.html';
+    }
+}
+
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
+    window.location.href = 'index.html';
+}
+
+function switchPage(pageName) {
+    const pages = document.querySelectorAll('.page');
+    const navItems = document.querySelectorAll('.nav-item');
+    
+    pages.forEach(page => page.classList.remove('active'));
+    navItems.forEach(item => item.classList.remove('active'));
+    
+    document.getElementById(pageName).classList.add('active');
+    document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
+    
+    document.getElementById('pageTitle').textContent = {
+        books: '书籍管理',
+        users: '用户管理',
+        statistics: '数据统计'
+    }[pageName];
+    
+    const addBtn = document.getElementById('addBtn');
+    if (pageName === 'books') {
+        addBtn.style.display = 'flex';
+        addBtn.onclick = openAddModal;
+        loadBooks();
+    } else if (pageName === 'users') {
+        addBtn.style.display = 'flex';
+        addBtn.onclick = openAddUserModal;
+        loadUsers();
+    } else {
+        addBtn.style.display = 'none';
+        loadStatistics();
+    }
+}
+
+async function loadBooks(page = 1) {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/api/books?page=${page}&page_size=10`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            renderBooks(data.books);
+            renderPagination(data.total_pages, data.current_page, 'books');
+            currentBookPage = page;
+        }
+    } catch (error) {
+        console.error('加载书籍失败:', error);
+    }
+}
+
+function renderBooks(books) {
+    const tbody = document.getElementById('booksTableBody');
+    tbody.innerHTML = '';
+    
+    if (books.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:30px;">暂无书籍</td></tr>';
+        return;
+    }
+    
+    books.forEach(book => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${book.id}</td>
+            <td>${book.name}</td>
+            <td>${book.author}</td>
+            <td><span class="status-badge ${book.status === '连载' ? 'serializing' : 'completed'}">${book.status}</span></td>
+            <td>${book.tags || '-'}</td>
+            <td>
+                <div class="action-btns">
+                    <button class="action-btn edit-btn" onclick="editBook(${book.id})">编辑</button>
+                    <button class="action-btn delete-btn" onclick="deleteBook(${book.id})">删除</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderPagination(totalPages, currentPage, type) {
+    const container = document.getElementById(`${type}Pagination`);
+    container.innerHTML = '';
+    
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    
+    if (end - start + 1 < maxVisible) {
+        start = Math.max(1, end - maxVisible + 1);
+    }
+    
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '上一页';
+    prevBtn.disabled = currentPage <= 1;
+    prevBtn.onclick = () => type === 'books' ? loadBooks(currentPage - 1) : loadUsers(currentPage - 1);
+    container.appendChild(prevBtn);
+    
+    for (let i = start; i <= end; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = i === currentPage ? 'active' : '';
+        btn.onclick = () => type === 'books' ? loadBooks(i) : loadUsers(i);
+        container.appendChild(btn);
+    }
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = '下一页';
+    nextBtn.disabled = currentPage >= totalPages;
+    nextBtn.onclick = () => type === 'books' ? loadBooks(currentPage + 1) : loadUsers(currentPage + 1);
+    container.appendChild(nextBtn);
+}
+
+function openAddModal() {
+    editingBook = null;
+    document.getElementById('modalTitle').textContent = '新增书籍';
+    document.getElementById('bookName').value = '';
+    document.getElementById('bookAuthor').value = '';
+    document.getElementById('bookStatus').value = '连载';
+    document.getElementById('bookTags').value = '';
+    document.getElementById('bookIntro').value = '';
+    document.getElementById('bookModal').classList.add('show');
+}
+
+function editBook(bookId) {
+    fetchBook(bookId).then(book => {
+        editingBook = book;
+        document.getElementById('modalTitle').textContent = '编辑书籍';
+        document.getElementById('bookName').value = book.name;
+        document.getElementById('bookAuthor').value = book.author;
+        document.getElementById('bookStatus').value = book.status;
+        document.getElementById('bookTags').value = book.tags || '';
+        document.getElementById('bookIntro').value = book.intro || '';
+        document.getElementById('bookModal').classList.add('show');
+    });
+}
+
+async function fetchBook(bookId) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/api/books/${bookId}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    return response.json();
+}
+
+async function saveBook() {
+    const bookData = {
+        name: document.getElementById('bookName').value,
+        author: document.getElementById('bookAuthor').value,
+        status: document.getElementById('bookStatus').value,
+        tags: document.getElementById('bookTags').value || null,
+        intro: document.getElementById('bookIntro').value || null
+    };
+    
+    try {
+        const token = localStorage.getItem('token');
+        let response;
+        
+        if (editingBook) {
+            response = await fetch(`${API_BASE_URL}/api/books/${editingBook.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bookData)
+            });
+        } else {
+            response = await fetch(`${API_BASE_URL}/api/books`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(bookData)
+            });
+        }
+        
+        if (response.ok) {
+            closeModal();
+            loadBooks(currentBookPage);
+        } else {
+            const data = await response.json();
+            alert(data.detail || '保存失败');
+        }
+    } catch (error) {
+        alert('保存失败，请稍后重试');
+    }
+}
+
+function closeModal() {
+    document.getElementById('bookModal').classList.remove('show');
+    editingBook = null;
+}
+
+async function deleteBook(bookId) {
+    if (!confirm('确定要删除这本书籍吗？')) return;
+    
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/api/books/${bookId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            loadBooks(currentBookPage);
+        } else {
+            const data = await response.json();
+            alert(data.detail || '删除失败');
+        }
+    } catch (error) {
+        alert('删除失败，请稍后重试');
+    }
+}
+
+function searchBooks() {
+    const keyword = document.getElementById('bookSearch').value;
+    const status = document.getElementById('bookStatusFilter').value;
+    
+    if (!keyword && !status) {
+        loadBooks(1);
+        return;
+    }
+    
+    fetchBooks(keyword, status);
+}
+
+async function fetchBooks(keyword = '', status = '') {
+    try {
+        const token = localStorage.getItem('token');
+        let url = `${API_BASE_URL}/api/books/search?page=1&page_size=10`;
+        
+        if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+        if (status) url += `&status=${encodeURIComponent(status)}`;
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            renderBooks(data.books);
+            renderPagination(data.total_pages, data.current_page, 'books');
+            currentBookPage = data.current_page;
+        }
+    } catch (error) {
+        console.error('搜索失败:', error);
+    }
+}
+
+async function loadUsers(page = 1) {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/api/users?page=${page}&page_size=10`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            renderUsers(data.users);
+            renderPagination(data.total_pages, data.current_page, 'users');
+            currentUserPage = page;
+        }
+    } catch (error) {
+        console.error('加载用户失败:', error);
+    }
+}
+
+function renderUsers(users) {
+    const tbody = document.getElementById('usersTableBody');
+    tbody.innerHTML = '';
+    
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:30px;">暂无用户</td></tr>';
+        return;
+    }
+    
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${user.id}</td>
+            <td>${user.username}</td>
+            <td>${user.phone || '-'}</td>
+            <td><span class="role-badge ${user.role}">${user.role === 'admin' ? '管理员' : '普通用户'}</span></td>
+            <td>${formatDate(user.created_at)}</td>
+            <td>
+                <div class="action-btns">
+                    <button class="action-btn edit-btn" onclick="editUser(${user.id})">编辑</button>
+                    <button class="action-btn delete-btn" onclick="deleteUser(${user.id})">删除</button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('zh-CN');
+}
+
+function openAddUserModal() {
+    editingUser = null;
+    document.getElementById('userModalTitle').textContent = '新增用户';
+    document.getElementById('userId').value = '';
+    document.getElementById('userName').value = '';
+    document.getElementById('userPhone').value = '';
+    document.getElementById('userPassword').value = '';
+    document.getElementById('userRole').value = 'user';
+    document.getElementById('userModal').classList.add('show');
+}
+
+function editUser(userId) {
+    fetchUser(userId).then(user => {
+        editingUser = user;
+        document.getElementById('userModalTitle').textContent = '编辑用户';
+        document.getElementById('userId').value = user.id;
+        document.getElementById('userName').value = user.username;
+        document.getElementById('userPhone').value = user.phone || '';
+        document.getElementById('userPassword').value = '';
+        document.getElementById('userRole').value = user.role;
+        document.getElementById('userModal').classList.add('show');
+    });
+}
+
+async function fetchUser(userId) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    return response.json();
+}
+
+async function saveUser() {
+    const userId = document.getElementById('userId').value;
+    const userData = {
+        username: document.getElementById('userName').value,
+        phone: document.getElementById('userPhone').value || null,
+        role: document.getElementById('userRole').value
+    };
+    
+    const password = document.getElementById('userPassword').value;
+    if (password) {
+        userData.password = password;
+    }
+    
+    try {
+        const token = localStorage.getItem('token');
+        let response;
+        
+        if (userId) {
+            response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+        } else {
+            response = await fetch(`${API_BASE_URL}/api/users`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+        }
+        
+        if (response.ok) {
+            closeUserModal();
+            loadUsers(currentUserPage);
+        } else {
+            const data = await response.json();
+            alert(data.detail || '保存失败');
+        }
+    } catch (error) {
+        alert('保存失败，请稍后重试');
+    }
+}
+
+function closeUserModal() {
+    document.getElementById('userModal').classList.remove('show');
+    editingUser = null;
+}
+
+async function deleteUser(userId) {
+    if (!confirm('确定要删除这个用户吗？')) return;
+    
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            loadUsers(currentUserPage);
+        } else {
+            const data = await response.json();
+            alert(data.detail || '删除失败');
+        }
+    } catch (error) {
+        alert('删除失败，请稍后重试');
+    }
+}
+
+function searchUsers() {
+    const keyword = document.getElementById('userSearch').value;
+    const role = document.getElementById('userRoleFilter').value;
+    
+    if (!keyword && !role) {
+        loadUsers(1);
+        return;
+    }
+    
+    fetchUsers(keyword, role);
+}
+
+async function fetchUsers(keyword = '', role = '') {
+    try {
+        const token = localStorage.getItem('token');
+        let url = `${API_BASE_URL}/api/users/search?page=1&page_size=10`;
+        
+        if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+        if (role) url += `&role=${encodeURIComponent(role)}`;
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            renderUsers(data.users);
+            renderPagination(data.total_pages, data.current_page, 'users');
+            currentUserPage = data.current_page;
+        }
+    } catch (error) {
+        console.error('搜索失败:', error);
+    }
+}
+
+async function loadStatistics() {
+    try {
+        const token = localStorage.getItem('token');
+        
+        const booksResponse = await fetch(`${API_BASE_URL}/api/books`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const booksData = await booksResponse.json();
+        
+        const usersResponse = await fetch(`${API_BASE_URL}/api/users`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const usersData = await usersResponse.json();
+        
+        const searchResponse = await fetch(`${API_BASE_URL}/api/books/search?status=连载`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const serializingData = await searchResponse.json();
+        
+        document.getElementById('statBooks').textContent = booksData.total;
+        document.getElementById('statUsers').textContent = usersData.total;
+        document.getElementById('statSerializing').textContent = serializingData.total;
+        document.getElementById('statFavorites').textContent = '计算中...';
+    } catch (error) {
+        console.error('加载统计数据失败:', error);
+    }
+}

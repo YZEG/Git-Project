@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小说推荐网 - 首页</title>
+    <link rel="stylesheet" href="css/home.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-book-open"></i>
+            <span>小说推荐网</span>
+        </div>
+        <nav class="nav">
+            <button class="nav-btn active" data-tab="recommend">推荐</button>
+            <button class="nav-btn" data-tab="search">搜索</button>
+            <button class="nav-btn" data-tab="favorites">我的收藏</button>
+        </nav>
+        <div class="user-info">
+            <span id="username">用户</span>
+            <button class="logout-btn" onclick="logout()">退出</button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="tab-content active" id="recommend">
+            <div class="section-header">
+                <h2>今日推荐</h2>
+                <span class="subtitle">为您精选的热门小说</span>
+            </div>
+            <div class="stats-row">
+                <div class="stat-card">
+                    <i class="fas fa-book"></i>
+                    <div>
+                        <span class="stat-value" id="totalBooks">0</span>
+                        <span class="stat-label">小说总数</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-star"></i>
+                    <div>
+                        <span class="stat-value" id="favCount">0</span>
+                        <span class="stat-label">我的收藏</span>
+                    </div>
+                </div>
+            </div>
+            <div class="books-grid" id="booksGrid"></div>
+        </div>
+
+        <div class="tab-content" id="search">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="搜索小说名称、作者...">
+                <select id="statusFilter">
+                    <option value="">全部状态</option>
+                    <option value="连载">连载中</option>
+                    <option value="完结">已完结</option>
+                </select>
+                <button class="search-btn" onclick="searchBooks()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <div class="books-grid" id="searchResults"></div>
+        </div>
+
+        <div class="tab-content" id="favorites">
+            <div class="section-header">
+                <h2>我的收藏</h2>
+                <span class="subtitle">收藏您喜欢的小说</span>
+            </div>
+            <div class="books-grid" id="favoritesGrid"></div>
+            <div class="empty-state" id="emptyFavorites" style="display: none;">
+                <i class="fas fa-heart-broken"></i>
+                <p>暂无收藏的小说</p>
+                <button class="empty-btn" onclick="switchTab('recommend')">去看看推荐</button>
+            </div>
+        </div>
+    </main>
+
+    <div class="book-modal" id="bookModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div class="modal-body">
+                <h3 id="modalTitle"></h3>
+                <div class="modal-info">
+                    <span class="author">作者：<span id="modalAuthor"></span></span>
+                    <span class="status" id="modalStatus"></span>
+                </div>
+                <div class="tags" id="modalTags"></div>
+                <p class="intro" id="modalIntro"></p>
+                <div class="modal-actions">
+                    <button class="action-btn favorite-btn" id="favoriteBtn" onclick="toggleFavorite()">
+                        <i class="fas fa-heart"></i>
+                        <span>收藏</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/home.js"></script>
+</body>
+</html>
