@@ -29,6 +29,10 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional
+import os
+
+# 获取脚本所在目录的绝对路径
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # JWT配置
 SECRET_KEY = "your-secret-key-here-change-in-production"
@@ -53,7 +57,7 @@ app = FastAPI(
 )
 
 # 静态文件服务
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 # OAuth2密码Bearer
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
@@ -180,14 +184,16 @@ async def get_current_admin(current_user: UserInDB = Depends(get_current_user)):
 @app.get("/", response_class=HTMLResponse, summary="登录页面")
 async def login_page():
     """返回登录页面"""
-    with open("templates/login.html", "r", encoding="utf-8") as f:
+    template_path = os.path.join(BASE_DIR, "templates", "login.html")
+    with open(template_path, "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 
 # 书籍管理页面
 @app.get("/books", response_class=HTMLResponse, summary="书籍管理页面")
 async def books_page():
     """返回书籍管理页面"""
-    with open("templates/books.html", "r", encoding="utf-8") as f:
+    template_path = os.path.join(BASE_DIR, "templates", "books.html")
+    with open(template_path, "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 
 # 登录请求模型
