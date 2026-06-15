@@ -21,8 +21,8 @@ API接口：
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
+
+
 from pydantic import BaseModel
 import pymysql
 from jose import JWTError, jwt
@@ -65,9 +65,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# 静态文件服务
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 # OAuth2密码Bearer
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
@@ -190,21 +187,15 @@ async def get_current_admin(current_user: UserInDB = Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无管理员权限")
     return current_user
 
-# 登录页面
-@app.get("/", response_class=HTMLResponse, summary="登录页面")
-async def login_page():
-    """返回登录页面"""
-    template_path = os.path.join(BASE_DIR, "templates", "login.html")
-    with open(template_path, "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
-
-# 书籍管理页面
-@app.get("/books", response_class=HTMLResponse, summary="书籍管理页面")
-async def books_page():
-    """返回书籍管理页面"""
-    template_path = os.path.join(BASE_DIR, "templates", "books.html")
-    with open(template_path, "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
+async def get_current_user_or_admin(target_user_id: int = None):
+    """获取当前用户（允许用户访问自己的数据或管理员访问所有数据）"""
+    async def checker(current_user: UserInDB = Depends(get_current_user)):
+        if current_user.role == "admin":
+            return current_user
+        if target_user_id is not None and current_user.id != target_user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权限访问此资源")
+        return current_user
+    return checker
 
 # 登录请求模型
 class LoginRequest(BaseModel):
@@ -222,17 +213,11 @@ async def login(login_data: LoginRequest):
             detail="用户名或密码错误",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    if user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="非管理员用户无法登录",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "role": user.role}
 
 # 获取所有书籍（支持分页）
 @app.get("/api/books", response_model=dict, summary="获取书籍列表")
@@ -393,7 +378,7 @@ async def get_book(book_id: int, current_user: User = Depends(get_current_active
 
 # 创建新书籍
 @app.post("/api/books", response_model=BookResponse, status_code=201, summary="创建新书籍")
-async def create_book(book: BookCreate, current_user: User = Depends(get_current_active_user)):
+async def create_book(book: BookCreate, current_user: UserInDB = Depends(get_current_admin)):
     """创建一本新书籍"""
     conn = get_db_connection()
     try:
@@ -424,7 +409,7 @@ async def create_book(book: BookCreate, current_user: User = Depends(get_current
 
 # 更新书籍信息
 @app.put("/api/books/{book_id}", response_model=BookResponse, summary="更新书籍信息")
-async def update_book(book_id: int, book: BookCreate, current_user: User = Depends(get_current_active_user)):
+async def update_book(book_id: int, book: BookCreate, current_user: UserInDB = Depends(get_current_admin)):
     """更新指定书籍的信息"""
     conn = get_db_connection()
     try:
@@ -454,7 +439,7 @@ async def update_book(book_id: int, book: BookCreate, current_user: User = Depen
 
 # 删除书籍
 @app.delete("/api/books/{book_id}", status_code=204, summary="删除书籍")
-async def delete_book(book_id: int, current_user: User = Depends(get_current_active_user)):
+async def delete_book(book_id: int, current_user: UserInDB = Depends(get_current_admin)):
     """删除指定书籍"""
     conn = get_db_connection()
     try:
@@ -620,9 +605,11 @@ async def get_user_favorites(
     user_id: int,
     page: int = 1,
     page_size: int = 10,
-    current_user: UserInDB = Depends(get_current_admin)
+    current_user: UserInDB = Depends(get_current_user)
 ):
-    """获取用户收藏的书籍"""
+    """获取用户收藏的书籍（用户可查看自己的收藏，管理员可查看所有）"""
+    if current_user.role != "admin" and current_user.id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权限访问此资源")
     conn = get_db_connection()
     try:
         cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -651,9 +638,11 @@ async def get_user_favorites(
 async def add_favorite(
     user_id: int,
     book_id: int,
-    current_user: UserInDB = Depends(get_current_admin)
+    current_user: UserInDB = Depends(get_current_user)
 ):
-    """为用户添加收藏书籍"""
+    """为用户添加收藏书籍（用户可收藏自己的书籍，管理员可管理所有）"""
+    if current_user.role != "admin" and current_user.id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权限访问此资源")
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
@@ -680,9 +669,11 @@ async def add_favorite(
 async def remove_favorite(
     user_id: int,
     book_id: int,
-    current_user: UserInDB = Depends(get_current_admin)
+    current_user: UserInDB = Depends(get_current_user)
 ):
-    """取消用户对书籍的收藏"""
+    """取消用户对书籍的收藏（用户可取消自己的收藏，管理员可管理所有）"""
+    if current_user.role != "admin" and current_user.id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权限访问此资源")
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
