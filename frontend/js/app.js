@@ -22,9 +22,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     localStorage.setItem('username', username);
                     
                     if (response.role === 'admin') {
-                        window.location.href = 'admin.html';
+                        window.location.href = '/admin';
                     } else {
-                        window.location.href = 'home.html';
+                        window.location.href = '/home';
                     }
                 } else {
                     showError(response.message || '登录失败');

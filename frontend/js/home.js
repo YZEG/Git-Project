@@ -98,7 +98,7 @@ function createBookCard(book, isFavorited) {
             </span>
         </div>
         <div class="book-info">
-            <h3 class="book-title">${book.name}</h3>
+            <h3 class="book-title" data-book-id="${book.id}">${book.name}</h3>
             <p class="book-author">${book.author}</p>
             <div class="book-tags">
                 ${tags.map(tag => `<span class="tag">${tag.trim()}</span>`).join('')}
@@ -106,6 +106,12 @@ function createBookCard(book, isFavorited) {
             <span class="book-status ${book.status === '连载' ? 'serializing' : 'completed'}">${book.status}</span>
         </div>
     `;
+    
+    const titleElement = card.querySelector('.book-title');
+    titleElement.onclick = (e) => {
+        e.stopPropagation();
+        showBookDetail(book);
+    };
     
     return card;
 }
@@ -221,29 +227,23 @@ async function toggleFavoriteCard(bookId) {
 }
 
 function refreshFavoriteBadge(bookId) {
-    const badges = document.querySelectorAll('.favorite-badge');
-    badges.forEach(badge => {
-        const card = badge.closest('.book-card');
-        if (card) {
-            const bookName = card.querySelector('.book-title').textContent;
-            const book = [...document.querySelectorAll('.book-card')].find(c => 
-                c.querySelector('.book-title').textContent === bookName
-            );
-            if (book) {
-                const isFavorited = favorites.includes(bookId);
-                const badgeEl = book.querySelector('.favorite-badge');
-                const icon = book.querySelector('.favorite-badge i');
-                
-                if (isFavorited) {
-                    badgeEl.classList.add('favorited');
-                    icon.classList.remove('fa-heart-o');
-                    icon.classList.add('fa-heart');
-                } else {
-                    badgeEl.classList.remove('favorited');
-                    icon.classList.remove('fa-heart');
-                    icon.classList.add('fa-heart-o');
-                }
-            }
+    const cards = document.querySelectorAll('.book-card');
+    cards.forEach(card => {
+        const titleElement = card.querySelector('.book-title');
+        const currentBookId = parseInt(titleElement.dataset.bookId);
+        const badgeEl = card.querySelector('.favorite-badge');
+        const icon = card.querySelector('.favorite-badge i');
+        
+        const isFavorited = favorites.includes(currentBookId);
+        
+        if (isFavorited) {
+            badgeEl.classList.add('favorited');
+            icon.classList.remove('fa-heart-o');
+            icon.classList.add('fa-heart');
+        } else {
+            badgeEl.classList.remove('favorited');
+            icon.classList.remove('fa-heart');
+            icon.classList.add('fa-heart-o');
         }
     });
 }
@@ -319,7 +319,7 @@ function searchBooks() {
     const status = document.getElementById('statusFilter').value;
     
     if (!keyword && !status) {
-        loadBooks();
+        document.getElementById('searchResults').innerHTML = '<p style="text-align:center;color:#999;padding:40px;">请输入搜索关键词</p>';
         return;
     }
     
@@ -342,7 +342,7 @@ async function fetchBooks(keyword = '', status = '') {
         
         if (response.ok) {
             const data = await response.json();
-            renderBooks(data.books, 'booksGrid');
+            renderBooks(data.books, 'searchResults');
         }
     } catch (error) {
         console.error('搜索失败:', error);

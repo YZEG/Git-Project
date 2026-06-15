@@ -21,7 +21,8 @@ API接口：
 
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, RedirectResponse
 
 from pydantic import BaseModel
 import pymysql
@@ -66,6 +67,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 挂载前端静态文件服务
+frontend_dir = os.path.join(os.path.dirname(BASE_DIR), "frontend")
+app.mount("/css", StaticFiles(directory=os.path.join(frontend_dir, "css")), name="css")
+app.mount("/js", StaticFiles(directory=os.path.join(frontend_dir, "js")), name="js")
+
+# 首页路由 - 返回登录页面
+@app.get("/", response_class=HTMLResponse, summary="首页")
+async def index():
+    index_path = os.path.join(frontend_dir, "index.html")
+    with open(index_path, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+# 用户首页路由
+@app.get("/home", response_class=HTMLResponse, summary="用户首页")
+async def home_page():
+    home_path = os.path.join(frontend_dir, "home.html")
+    with open(home_path, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+# 管理员后台路由
+@app.get("/admin", response_class=HTMLResponse, summary="管理员后台")
+async def admin_page():
+    admin_path = os.path.join(frontend_dir, "admin.html")
+    with open(admin_path, "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
+
+# 重定向规则 - 处理 .html 后缀
+@app.get("/home.html", response_class=RedirectResponse)
+async def home_html_redirect():
+    return RedirectResponse(url="/home")
+
+@app.get("/admin.html", response_class=RedirectResponse)
+async def admin_html_redirect():
+    return RedirectResponse(url="/admin")
+
+@app.get("/index.html", response_class=RedirectResponse)
+async def index_html_redirect():
+    return RedirectResponse(url="/")
+
 # OAuth2密码Bearer
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
@@ -93,6 +133,7 @@ class BookResponse(BookCreate):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    role: str
 
 class TokenData(BaseModel):
     username: Optional[str] = None
@@ -599,6 +640,57 @@ async def delete_user(user_id: int, current_user: UserInDB = Depends(get_current
         conn.close()
 
 # 用户收藏书籍API
+
+# 简化的用户收藏API（用户操作自己的收藏）
+@app.get("/api/favorites", summary="获取当前用户收藏")
+async def get_my_favorites(current_user: UserInDB = Depends(get_current_user)):
+    """获取当前登录用户的收藏书籍"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute("SELECT book_id FROM user_favorites WHERE user_id = %s", (current_user.id,))
+        results = cursor.fetchall()
+        return [{"book_id": r["book_id"]} for r in results]
+    finally:
+        conn.close()
+
+@app.post("/api/favorites/{book_id}", status_code=204, summary="添加收藏")
+async def add_my_favorite(book_id: int, current_user: UserInDB = Depends(get_current_user)):
+    """当前用户添加收藏书籍"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM books WHERE id = %s", (book_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="书籍不存在")
+        
+        try:
+            cursor.execute("INSERT INTO user_favorites (user_id, book_id) VALUES (%s, %s)", (current_user.id, book_id))
+            conn.commit()
+        except pymysql.IntegrityError:
+            raise HTTPException(status_code=400, detail="该书籍已被收藏")
+        
+        return None
+    finally:
+        conn.close()
+
+@app.delete("/api/favorites/{book_id}", status_code=204, summary="取消收藏")
+async def remove_my_favorite(book_id: int, current_user: UserInDB = Depends(get_current_user)):
+    """当前用户取消收藏书籍"""
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        
+        cursor.execute("DELETE FROM user_favorites WHERE user_id = %s AND book_id = %s", (current_user.id, book_id))
+        conn.commit()
+        
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="收藏记录不存在")
+        
+        return None
+    finally:
+        conn.close()
 
 @app.get("/api/users/{user_id}/favorites", response_model=dict, summary="获取用户收藏")
 async def get_user_favorites(

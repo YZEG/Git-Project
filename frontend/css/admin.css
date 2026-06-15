@@ -4,50 +4,61 @@
     box-sizing: border-box;
 }
 
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: #f5f7fa;
-    min-height: 100vh;
 }
 
 .admin-container {
     display: flex;
     height: 100vh;
+    width: 100vw;
+    overflow: hidden;
 }
 
 .sidebar {
-    width: 250px;
+    width: 260px;
+    min-width: 200px;
+    max-width: 320px;
     background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
     color: white;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
 }
 
 .logo {
-    padding: 25px;
+    padding: 20px;
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
 }
 
 .logo i {
-    font-size: 28px;
+    font-size: 24px;
     color: #667eea;
 }
 
 .sidebar-nav {
     flex: 1;
-    padding: 20px 0;
+    padding: 15px 0;
+    overflow-y: auto;
 }
 
 .nav-item {
     width: 100%;
-    padding: 15px 25px;
+    padding: 14px 20px;
     background: none;
     border: none;
     color: rgba(255, 255, 255, 0.7);
@@ -57,7 +68,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 15px;
+    font-size: 14px;
 }
 
 .nav-item:hover {
@@ -71,11 +82,11 @@ body {
 }
 
 .nav-item i {
-    width: 20px;
+    width: 18px;
 }
 
 .sidebar-footer {
-    padding: 20px;
+    padding: 15px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     text-align: center;
 }
@@ -83,7 +94,7 @@ body {
 .sidebar-footer span {
     display: block;
     margin-bottom: 10px;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .logout-btn {
@@ -93,8 +104,9 @@ body {
     padding: 8px 20px;
     border-radius: 20px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
     transition: background 0.3s ease;
+    width: 100%;
 }
 
 .logout-btn:hover {
@@ -105,20 +117,22 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: auto;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .panel-header {
     background: white;
-    padding: 20px 30px;
+    padding: 16px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
 }
 
 .panel-header h1 {
-    font-size: 24px;
+    font-size: 22px;
     color: #333;
 }
 
@@ -140,6 +154,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
 }
 
 .add-btn:hover {
@@ -148,30 +163,38 @@ body {
 
 .page-content {
     flex: 1;
-    padding: 25px 30px;
+    padding: 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .page {
     display: none;
+    height: 100%;
 }
 
 .page.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .search-area {
     display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-    padding: 20px;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 16px;
     background: white;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    flex-wrap: wrap;
 }
 
 .search-area input {
     flex: 1;
-    padding: 12px 15px;
+    min-width: 150px;
+    max-width: 400px;
+    padding: 10px 14px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 14px;
@@ -184,53 +207,136 @@ body {
 }
 
 .search-area select {
-    padding: 12px 15px;
+    padding: 10px 14px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 14px;
     outline: none;
     cursor: pointer;
+    min-width: 120px;
 }
 
 .search-btn {
     background: #667eea;
     border: none;
     color: white;
-    padding: 12px 20px;
+    padding: 10px 18px;
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.3s ease;
+    white-space: nowrap;
 }
 
 .search-btn:hover {
     background: #5a6fd6;
 }
 
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
+.table-wrapper {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: auto;
     background: white;
     border-radius: 10px;
-    overflow: hidden;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    min-height: 0;
+}
+
+.data-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    table-layout: auto;
 }
 
 .data-table th,
 .data-table td {
-    padding: 14px 16px;
+    padding: 12px 14px;
     text-align: left;
     border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap;
 }
 
 .data-table th {
     background: #f8f9fa;
     font-weight: 600;
     color: #666;
-    font-size: 14px;
+    font-size: 13px;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .data-table tr:hover {
     background: #f8f9fa;
+}
+
+.book-name-link {
+    color: #667eea;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.book-name-link:hover {
+    color: #5a6fd6;
+    text-decoration: underline;
+}
+
+.detail-tag {
+    background: #e8f4fd;
+    color: #1e88e5;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+}
+
+.table-tag {
+    background: #e8f4fd;
+    color: #1e88e5;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.edit-tag {
+    background: #667eea;
+    color: white;
+    padding: 5px 22px 5px 10px;
+    border-radius: 15px;
+    font-size: 13px;
+    position: relative;
+    white-space: nowrap;
+}
+
+.remove-tag {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.8;
+}
+
+.remove-tag:hover {
+    opacity: 1;
+}
+
+.add-tag-btn {
+    background: #667eea;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.3s ease;
+}
+
+.add-tag-btn:hover {
+    background: #5a6fd6;
 }
 
 .data-table tr:last-child td {
@@ -239,16 +345,18 @@ body {
 
 .action-btns {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
 .action-btn {
-    padding: 6px 12px;
+    padding: 5px 10px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     transition: all 0.3s ease;
+    white-space: nowrap;
 }
 
 .edit-btn {
@@ -270,10 +378,11 @@ body {
 }
 
 .role-badge {
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 16px;
+    font-size: 11px;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .role-badge.admin {
@@ -287,10 +396,11 @@ body {
 }
 
 .status-badge {
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 16px;
+    font-size: 11px;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .status-badge.serializing {
@@ -306,17 +416,19 @@ body {
 .pagination {
     display: flex;
     justify-content: center;
-    gap: 8px;
-    margin-top: 20px;
+    gap: 6px;
+    margin-top: 16px;
+    padding: 10px;
 }
 
 .pagination button {
-    padding: 8px 16px;
+    padding: 6px 14px;
     border: 1px solid #e0e0e0;
     background: white;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s ease;
+    font-size: 13px;
 }
 
 .pagination button:hover:not(:disabled) {
@@ -338,34 +450,36 @@ body {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    flex: 1;
 }
 
 .stat-card {
     background: white;
-    padding: 30px;
+    padding: 24px;
     border-radius: 12px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
+    min-width: 180px;
 }
 
 .stat-card i {
-    font-size: 40px;
+    font-size: 36px;
     color: #667eea;
 }
 
 .stat-value {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 600;
     color: #333;
     display: block;
 }
 
 .stat-label {
-    font-size: 14px;
+    font-size: 13px;
     color: #999;
 }
 
@@ -380,6 +494,7 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    padding: 20px;
 }
 
 .modal.show {
@@ -389,7 +504,7 @@ body {
 .modal-content {
     background: white;
     border-radius: 12px;
-    width: 90%;
+    width: 100%;
     max-width: 500px;
     max-height: 90vh;
     overflow-y: auto;
@@ -411,20 +526,24 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
+    padding: 16px 20px;
     border-bottom: 1px solid #f0f0f0;
+    position: sticky;
+    top: 0;
+    background: white;
 }
 
 .modal-header h3 {
-    font-size: 18px;
+    font-size: 17px;
     color: #333;
 }
 
 .close-modal {
-    font-size: 24px;
+    font-size: 22px;
     cursor: pointer;
     color: #999;
     transition: color 0.3s ease;
+    line-height: 1;
 }
 
 .close-modal:hover {
@@ -432,30 +551,32 @@ body {
 }
 
 #bookForm, #userForm {
-    padding: 20px;
+    padding: 16px 20px;
 }
 
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 14px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: #555;
     font-weight: 500;
+    font-size: 14px;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 12px;
+    padding: 10px 12px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 14px;
     outline: none;
     transition: border-color 0.3s ease;
+    box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -466,23 +587,24 @@ body {
 
 .form-group textarea {
     resize: vertical;
+    min-height: 80px;
 }
 
 .form-actions {
     display: flex;
-    gap: 15px;
-    margin-top: 25px;
+    gap: 12px;
+    margin-top: 20px;
 }
 
 .cancel-btn {
     flex: 1;
-    padding: 12px;
+    padding: 10px;
     border: 2px solid #e0e0e0;
     background: white;
     color: #666;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     transition: all 0.3s ease;
 }
@@ -493,13 +615,13 @@ body {
 
 .submit-btn {
     flex: 2;
-    padding: 12px;
+    padding: 10px;
     border: none;
     background: #667eea;
     color: white;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     transition: background 0.3s ease;
 }
@@ -515,40 +637,276 @@ body {
     
     .sidebar {
         width: 100%;
+        min-width: auto;
+        max-width: none;
         flex-direction: row;
         flex-wrap: wrap;
-        padding: 10px;
+        padding: 8px;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
     
     .logo {
         border-bottom: none;
-        padding: 10px 20px;
+        padding: 8px 16px;
         border-right: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 14px;
+    }
+    
+    .logo i {
+        font-size: 20px;
     }
     
     .sidebar-nav {
         display: flex;
         padding: 0;
+        overflow-x: auto;
+        flex: none;
+        border-bottom: none;
     }
     
     .nav-item {
-        padding: 10px 15px;
+        padding: 8px 12px;
+        font-size: 13px;
+        white-space: nowrap;
     }
     
     .sidebar-footer {
         border-top: none;
-        padding: 10px;
+        padding: 8px 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+    
+    .sidebar-footer span {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+    
+    .logout-btn {
+        padding: 6px 14px;
+        font-size: 12px;
+        width: auto;
+    }
+    
+    .panel-header {
+        padding: 12px 16px;
+    }
+    
+    .panel-header h1 {
+        font-size: 18px;
+    }
+    
+    .add-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+    
+    .page-content {
+        padding: 12px;
     }
     
     .search-area {
         flex-direction: column;
+        gap: 10px;
     }
     
-    .data-table {
-        overflow-x: auto;
+    .search-area input {
+        max-width: none;
+    }
+    
+    .table-wrapper {
+        border-radius: 8px;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+        font-size: 13px;
     }
     
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .stat-card {
+        padding: 16px;
+        min-width: auto;
+    }
+    
+    .stat-value {
+        font-size: 22px;
+    }
+    
+    .action-btns {
+        justify-content: flex-start;
+    }
+    
+    .action-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .logo {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px;
+        justify-content: center;
+    }
+    
+    .sidebar-nav {
+        justify-content: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 8px 0;
+    }
+    
+    .nav-item {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    .sidebar-footer {
+        align-items: center;
+        flex-direction: row;
+        gap: 15px;
+        justify-content: space-between;
+        padding: 10px 12px;
+    }
+    
+    .sidebar-footer span {
+        font-size: 11px;
+        margin-bottom: 0;
+    }
+    
+    .logout-btn {
+        padding: 5px 12px;
+        font-size: 11px;
+    }
+    
+    .panel-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .panel-header h1 {
+        font-size: 16px;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .add-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 8px;
+        font-size: 12px;
+    }
+    
+    .page-content {
+        padding: 8px;
+    }
+    
+    .search-area {
+        padding: 12px;
+    }
+    
+    .search-area input,
+    .search-area select {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    
+    .search-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .stat-card {
+        padding: 14px;
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 20px;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+    }
+    
+    .data-table {
+        min-width: 400px;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+    
+    .action-btns {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .action-btn {
+        padding: 3px 8px;
+        font-size: 10px;
+        white-space: normal;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .modal-header {
+        padding: 12px 16px;
+    }
+    
+    .modal-header h3 {
+        font-size: 15px;
+    }
+    
+    #bookForm, #userForm {
+        padding: 12px 16px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .cancel-btn,
+    .submit-btn {
+        padding: 8px;
+        font-size: 13px;
     }
 }

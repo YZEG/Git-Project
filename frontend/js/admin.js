@@ -27,6 +27,19 @@ document.addEventListener('DOMContentLoaded', function() {
         saveUser();
     });
     
+    document.getElementById('detailModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDetailModal();
+        }
+    });
+    
+    document.getElementById('bookTagsInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addTag();
+        }
+    });
+    
     loadBooks();
 });
 
@@ -107,13 +120,14 @@ function renderBooks(books) {
     }
     
     books.forEach(book => {
+        const tags = book.tags ? book.tags.split(',').map(tag => `<span class="table-tag">${tag.trim()}</span>`).join('') : '-';
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${book.id}</td>
-            <td>${book.name}</td>
+            <td><span class="book-name-link" onclick="showBookDetail(${book.id})">${book.name}</span></td>
             <td>${book.author}</td>
             <td><span class="status-badge ${book.status === '连载' ? 'serializing' : 'completed'}">${book.status}</span></td>
-            <td>${book.tags || '-'}</td>
+            <td style="display: flex; flex-wrap: wrap; gap: 6px;">${tags}</td>
             <td>
                 <div class="action-btns">
                     <button class="action-btn edit-btn" onclick="editBook(${book.id})">编辑</button>
@@ -123,6 +137,35 @@ function renderBooks(books) {
         `;
         tbody.appendChild(row);
     });
+}
+
+async function showBookDetail(bookId) {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/api/books/${bookId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const book = await response.json();
+            document.getElementById('detailModalTitle').textContent = book.name;
+            document.getElementById('detailAuthor').textContent = book.author;
+            document.getElementById('detailStatus').textContent = book.status;
+            document.getElementById('detailStatus').className = `status ${book.status === '连载' ? 'serializing' : 'completed'}`;
+            document.getElementById('detailTags').innerHTML = book.tags ? 
+                book.tags.split(',').map(tag => `<span class="detail-tag">${tag.trim()}</span>`).join('') : '<span style="color:#999;">无</span>';
+            document.getElementById('detailIntro').textContent = book.intro || '暂无简介';
+            document.getElementById('detailModal').classList.add('show');
+        }
+    } catch (error) {
+        console.error('加载书籍详情失败:', error);
+    }
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').classList.remove('show');
 }
 
 function renderPagination(totalPages, currentPage, type) {
@@ -164,8 +207,9 @@ function openAddModal() {
     document.getElementById('bookName').value = '';
     document.getElementById('bookAuthor').value = '';
     document.getElementById('bookStatus').value = '连载';
-    document.getElementById('bookTags').value = '';
+    document.getElementById('bookTagsInput').value = '';
     document.getElementById('bookIntro').value = '';
+    clearTags();
     document.getElementById('bookModal').classList.add('show');
 }
 
@@ -176,10 +220,60 @@ function editBook(bookId) {
         document.getElementById('bookName').value = book.name;
         document.getElementById('bookAuthor').value = book.author;
         document.getElementById('bookStatus').value = book.status;
-        document.getElementById('bookTags').value = book.tags || '';
+        document.getElementById('bookTagsInput').value = '';
         document.getElementById('bookIntro').value = book.intro || '';
+        clearTags();
+        if (book.tags) {
+            book.tags.split(',').forEach(tag => {
+                addTagToContainer(tag.trim());
+            });
+        }
         document.getElementById('bookModal').classList.add('show');
     });
+}
+
+function clearTags() {
+    document.getElementById('tagsContainer').innerHTML = '';
+}
+
+function addTag() {
+    const input = document.getElementById('bookTagsInput');
+    const tag = input.value.trim();
+    if (tag && !isTagExists(tag)) {
+        addTagToContainer(tag);
+        input.value = '';
+    }
+}
+
+function addTagToContainer(tag) {
+    const container = document.getElementById('tagsContainer');
+    const tagElement = document.createElement('span');
+    tagElement.className = 'edit-tag';
+    tagElement.innerHTML = `${tag} <span class="remove-tag" onclick="removeTag(this)">×</span>`;
+    container.appendChild(tagElement);
+}
+
+function isTagExists(tag) {
+    const tags = document.querySelectorAll('.edit-tag');
+    for (const t of tags) {
+        if (t.textContent.trim().replace('×', '').trim() === tag) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function removeTag(element) {
+    element.parentElement.remove();
+}
+
+function getTagsValue() {
+    const tags = document.querySelectorAll('.edit-tag');
+    const tagList = [];
+    tags.forEach(tag => {
+        tagList.push(tag.textContent.trim().replace('×', '').trim());
+    });
+    return tagList.join(',');
 }
 
 async function fetchBook(bookId) {
@@ -197,7 +291,7 @@ async function saveBook() {
         name: document.getElementById('bookName').value,
         author: document.getElementById('bookAuthor').value,
         status: document.getElementById('bookStatus').value,
-        tags: document.getElementById('bookTags').value || null,
+        tags: getTagsValue() || null,
         intro: document.getElementById('bookIntro').value || null
     };
     
