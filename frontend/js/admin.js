@@ -72,9 +72,10 @@ function switchPage(pageName) {
     document.getElementById('pageTitle').textContent = {
         books: '书籍管理',
         users: '用户管理',
-        statistics: '数据统计'
+        statistics: '数据统计',
+        spider: '爬虫工具'
     }[pageName];
-    
+
     const addBtn = document.getElementById('addBtn');
     if (pageName === 'books') {
         addBtn.style.display = 'flex';
@@ -84,6 +85,8 @@ function switchPage(pageName) {
         addBtn.style.display = 'flex';
         addBtn.onclick = openAddUserModal;
         loadUsers();
+    } else if (pageName === 'spider') {
+        addBtn.style.display = 'none';
     } else {
         addBtn.style.display = 'none';
         loadStatistics();
@@ -620,8 +623,108 @@ async function loadStatistics() {
         document.getElementById('statBooks').textContent = booksData.total;
         document.getElementById('statUsers').textContent = usersData.total;
         document.getElementById('statSerializing').textContent = serializingData.total;
-        document.getElementById('statFavorites').textContent = '计算中...';
     } catch (error) {
         console.error('加载统计数据失败:', error);
     }
+}
+
+// ========== 爬虫工具 ==========
+document.addEventListener('DOMContentLoaded', function() {
+    const startInput = document.getElementById('spiderPageStart');
+    const endInput = document.getElementById('spiderPageEnd');
+    if (startInput && endInput) {
+        const updateEstimate = () => {
+            const s = Math.max(1, parseInt(startInput.value) || 1);
+            const e = Math.max(s, parseInt(endInput.value) || s);
+            document.getElementById('spiderEstimate').textContent = (e - s + 1) * 20;
+        };
+        startInput.addEventListener('input', updateEstimate);
+        endInput.addEventListener('input', updateEstimate);
+    }
+});
+
+async function runQidianSpider() {
+    const startPage = parseInt(document.getElementById('spiderPageStart').value) || 1;
+    const endPage = parseInt(document.getElementById('spiderPageEnd').value) || startPage;
+    const autoSave = document.getElementById('spiderAutoSave').checked;
+
+    if (startPage < 1 || endPage < startPage || endPage > 50) {
+        alert('页码范围错误：起始页≥1，结束页≤50，且结束页≥起始页');
+        return;
+    }
+
+    const pages = startPage === endPage ? `${startPage}` : `${startPage}-${endPage}`;
+    const statusEl = document.getElementById('spiderStatus');
+    const statusText = document.getElementById('spiderStatusText');
+    statusEl.style.display = 'flex';
+    statusEl.className = 'spider-status loading';
+    statusText.textContent = `正在爬取起点月票榜第 ${pages} 页，请稍候（含状态检测可能需要较长时间）...`;
+    document.getElementById('spiderResults').style.display = 'none';
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/api/spider/qidian`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ pages, save: autoSave })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            let msg = `爬取成功！共 ${data.total} 本书`;
+            if (data.saved > 0) msg += `，已保存 ${data.saved} 本新书到数据库`;
+            if (autoSave && data.saved === 0) msg += '（所有书籍已存在，无需重复保存）';
+            statusEl.className = 'spider-status success';
+            statusText.textContent = msg;
+            renderQidianResults(data.books);
+            document.getElementById('spiderResults').style.display = 'flex';
+        } else {
+            statusEl.className = 'spider-status error';
+            statusText.textContent = data.detail || '爬取失败';
+        }
+    } catch (error) {
+        statusEl.className = 'spider-status error';
+        statusText.textContent = '请求失败: ' + error.message;
+    }
+}
+
+function renderQidianResults(books) {
+    const tbody = document.getElementById('spiderTableBody');
+    tbody.innerHTML = '';
+    document.getElementById('spiderCount').textContent = books.length;
+
+    if (books.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:30px;">无数据</td></tr>';
+        return;
+    }
+
+    books.forEach(book => {
+        const row = document.createElement('tr');
+        const tags = book.tags ? book.tags.split(',').map(t => `<span class="table-tag">${escapeHtml(t.trim())}</span>`).join('') : '-';
+        const intro = book.intro ? (book.intro.length > 40 ? escapeHtml(book.intro.substring(0, 40)) + '...' : escapeHtml(book.intro)) : '-';
+        row.innerHTML = `
+            <td>${book.rank}</td>
+            <td><b>${escapeHtml(book.name)}</b></td>
+            <td>${escapeHtml(book.author)}</td>
+            <td><span class="status-badge ${book.status === '连载' ? 'serializing' : 'completed'}">${book.status}</span></td>
+            <td>${tags}</td>
+            <td title="${escapeHtml(book.intro || '')}">${intro}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function clearSpider() {
+    document.getElementById('spiderStatus').style.display = 'none';
+    document.getElementById('spiderResults').style.display = 'none';
 }

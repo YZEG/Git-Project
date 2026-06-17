@@ -27,6 +27,10 @@
                     <i class="fas fa-chart-bar"></i>
                     <span>数据统计</span>
                 </button>
+                <button class="nav-item" data-page="spider">
+                    <i class="fas fa-spider"></i>
+                    <span>爬虫工具</span>
+                </button>
             </nav>
             <div class="sidebar-footer">
                 <span id="adminName">管理员</span>
@@ -103,34 +107,87 @@
                 </div>
 
                 <div class="page" id="statistics">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <i class="fas fa-book"></i>
-                            <div>
-                                <span class="stat-value" id="statBooks">0</span>
-                                <span class="stat-label">书籍总数</span>
+                    <div class="stats-table-area">
+                        <h3>系统数据概览</h3>
+                        <table class="data-table stats-table">
+                            <thead>
+                                <tr>
+                                    <th>统计项</th>
+                                    <th>数值</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody id="statsTableBody">
+                                <tr>
+                                    <td><i class="fas fa-book"></i> 书籍总数</td>
+                                    <td id="statBooks">0</td>
+                                    <td>系统中所有书籍的数量</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-users"></i> 用户总数</td>
+                                    <td id="statUsers">0</td>
+                                    <td>注册用户总数（含管理员）</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-edit"></i> 连载中</td>
+                                    <td id="statSerializing">0</td>
+                                    <td>当前状态为连载的书籍数量</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="page" id="spider">
+                    <div class="spider-config">
+                        <div class="spider-inputs">
+                            <h4 style="margin-bottom:14px;color:#333;"><i class="fas fa-spider" style="color:#667eea;margin-right:8px;"></i>起点月票榜爬虫</h4>
+                            <div class="spider-field">
+                                <label>爬取页码</label>
+                                <div style="display:flex;gap:10px;align-items:center;">
+                                    <input type="number" id="spiderPageStart" value="1" min="1" max="50" style="width:80px;text-align:center;">
+                                    <span style="color:#999;">至</span>
+                                    <input type="number" id="spiderPageEnd" value="1" min="1" max="50" style="width:80px;text-align:center;">
+                                    <span style="color:#999;font-size:13px;">每页20本，共 <b id="spiderEstimate">20</b> 本</span>
+                                </div>
+                            </div>
+                            <div class="spider-field">
+                                <label>
+                                    <input type="checkbox" id="spiderAutoSave" checked style="margin-right:6px;">
+                                    爬取后自动保存到书籍库
+                                </label>
+                            </div>
+                            <div class="spider-actions">
+                                <button class="spider-run-btn" onclick="runQidianSpider()">
+                                    <i class="fas fa-play"></i> 开始爬取
+                                </button>
+                                <button class="spider-clear-btn" onclick="clearSpider()">
+                                    <i class="fas fa-eraser"></i> 清空结果
+                                </button>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <i class="fas fa-users"></i>
-                            <div>
-                                <span class="stat-value" id="statUsers">0</span>
-                                <span class="stat-label">用户总数</span>
-                            </div>
+                    </div>
+                    <div class="spider-status" id="spiderStatus" style="display:none;">
+                        <span id="spiderStatusText"></span>
+                    </div>
+                    <div class="spider-results" id="spiderResults" style="display:none;">
+                        <div class="spider-results-header">
+                            <h4>爬取结果（共 <span id="spiderCount">0</span> 本）</h4>
                         </div>
-                        <div class="stat-card">
-                            <i class="fas fa-star"></i>
-                            <div>
-                                <span class="stat-value" id="statFavorites">0</span>
-                                <span class="stat-label">收藏总数</span>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <i class="fas fa-edit"></i>
-                            <div>
-                                <span class="stat-value" id="statSerializing">0</span>
-                                <span class="stat-label">连载中</span>
-                            </div>
+                        <div class="spider-table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>排名</th>
+                                        <th>书名</th>
+                                        <th>作者</th>
+                                        <th>状态</th>
+                                        <th>标签</th>
+                                        <th>简介</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="spiderTableBody"></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

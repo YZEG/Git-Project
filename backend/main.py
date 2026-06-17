@@ -26,11 +26,13 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from pydantic import BaseModel
 import pymysql
+import requests
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import Optional
 import os
+import time
 from fastapi.middleware.cors import CORSMiddleware
 
 # 获取脚本所在目录的绝对路径
@@ -779,6 +781,182 @@ async def remove_favorite(
         return None
     finally:
         conn.close()
+
+# 爬虫API - 起点月票榜
+class QidianSpiderRequest(BaseModel):
+    pages: str = "1"  # 页码范围，如 "1" 或 "1-3"
+    save: bool = False  # 是否保存到数据库
+
+def qidian_get_status(bid):
+    """获取书籍真实状态（连载/完结）"""
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
+        'Referer': 'https://m.qidian.com/rank/yuepiao',
+    }
+    try:
+        r = requests.get(f'https://m.qidian.com/book/{bid}', headers=headers, timeout=10)
+        if r.status_code != 200:
+            return '连载'
+        if '连载中' in r.text:
+            return '连载'
+        if r.text.count('完本') > r.text.count('连载'):
+            return '完结'
+        return '连载'
+    except:
+        return '连载'
+
+@app.post("/api/spider/qidian", summary="起点月票榜爬虫")
+async def spider_qidian(req: QidianSpiderRequest, current_user: UserInDB = Depends(get_current_admin)):
+    """爬取起点中文网月票排行榜，自动提取书籍信息"""
+
+    # 解析页码范围
+    try:
+        if '-' in req.pages:
+            parts = req.pages.split('-')
+            start_page, end_page = int(parts[0]), int(parts[1])
+        else:
+            start_page = end_page = int(req.pages)
+        if start_page < 1 or end_page < start_page or end_page > 50:
+            raise ValueError
+    except ValueError:
+        raise HTTPException(status_code=400, detail="页码格式错误，示例：1 或 1-3（最大50页）")
+
+    mobile_headers = {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Referer': 'https://m.qidian.com/',
+    }
+
+    try:
+        # 1. 获取CSRF Token
+        session = requests.Session()
+        r = session.get('https://m.qidian.com/rank/yuepiao', headers=mobile_headers, timeout=15)
+        if r.status_code != 200:
+            raise HTTPException(status_code=400, detail=f"访问起点失败，状态码: {r.status_code}")
+        csrf = session.cookies.get('_csrfToken', '')
+        if not csrf:
+            raise HTTPException(status_code=400, detail="获取CSRF Token失败")
+
+        # 2. 逐页爬取
+        all_books = []
+        for page_num in range(start_page, end_page + 1):
+            api_url = f'https://m.qidian.com/majax/rank/yuepiaolist?_csrfToken={csrf}&pageNum={page_num}&pageSize=20&gender=male'
+            mobile_headers['Accept'] = 'application/json, text/plain, */*'
+            mobile_headers['Referer'] = 'https://m.qidian.com/rank/yuepiao'
+            r = session.get(api_url, headers=mobile_headers, timeout=15)
+
+            if r.status_code != 200:
+                continue
+
+            data = r.json()
+            if data.get('code') != 0:
+                continue
+
+            records = data.get('data', {}).get('records', [])
+            for rec in records:
+                book = {
+                    'rank': rec.get('rankNum', 0),
+                    'name': rec.get('bName', ''),
+                    'author': rec.get('bAuth', ''),
+                    'bid': rec.get('bid', ''),
+                    'tags': f"{rec.get('cat', '')},{rec.get('subCat', '')}",
+                    'intro': rec.get('desc', '').replace('“', '"').replace('”', '"').strip(),
+                }
+                all_books.append(book)
+
+            if page_num < end_page:
+                time.sleep(0.5)
+
+        # 3. 获取每本书的真实状态
+        for i, book in enumerate(all_books):
+            book['status'] = qidian_get_status(book['bid'])
+            if (i + 1) % 5 == 0:
+                time.sleep(1)
+
+        # 4. 可选：保存到数据库
+        saved_count = 0
+        if req.save and all_books:
+            conn = get_db_connection()
+            try:
+                cursor = conn.cursor()
+                for book in all_books:
+                    cursor.execute("SELECT id FROM books WHERE name = %s", (book['name'],))
+                    if cursor.fetchone():
+                        continue
+                    cursor.execute(
+                        "INSERT INTO books (name, author, status, tags, intro) VALUES (%s, %s, %s, %s, %s)",
+                        (book['name'], book['author'], book['status'], book['tags'], book['intro'])
+                    )
+                    saved_count += 1
+                conn.commit()
+            finally:
+                conn.close()
+
+        return {
+            "success": True,
+            "pages": f"{start_page}-{end_page}",
+            "total": len(all_books),
+            "saved": saved_count,
+            "books": all_books
+        }
+
+    except requests.RequestException as e:
+        raise HTTPException(status_code=400, detail=f"网络请求失败: {str(e)}")
+
+# 通用爬虫API（保留）
+class SpiderRequest(BaseModel):
+    url: str
+    regex: str
+    headers: Optional[str] = None
+
+@app.post("/api/spider", summary="通用爬虫接口")
+async def spider(req: SpiderRequest, current_user: UserInDB = Depends(get_current_admin)):
+    """根据URL和正则表达式爬取网页内容"""
+    import re as re_module
+
+    default_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+    }
+
+    if req.headers:
+        try:
+            extra = eval(req.headers)
+            if isinstance(extra, dict):
+                default_headers.update(extra)
+        except:
+            pass
+
+    try:
+        r = requests.get(req.url, headers=default_headers, timeout=15)
+        r.encoding = r.apparent_encoding or 'utf-8'
+
+        if r.status_code != 200:
+            raise HTTPException(status_code=400, detail=f"请求失败，状态码: {r.status_code}")
+
+        try:
+            matches = re_module.findall(req.regex, r.text)
+        except re_module.error as e:
+            raise HTTPException(status_code=400, detail=f"正则表达式错误: {str(e)}")
+
+        results = []
+        for i, match in enumerate(matches):
+            if isinstance(match, tuple):
+                results.append({"index": i + 1, "groups": list(match), "text": " | ".join(match)})
+            else:
+                results.append({"index": i + 1, "groups": [match], "text": match})
+
+        return {
+            "success": True,
+            "url": req.url,
+            "regex": req.regex,
+            "total": len(results),
+            "results": results
+        }
+    except requests.RequestException as e:
+        raise HTTPException(status_code=400, detail=f"请求URL失败: {str(e)}")
 
 # 健康检查接口
 @app.get("/api/health", summary="健康检查")

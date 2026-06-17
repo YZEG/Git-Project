@@ -448,39 +448,36 @@ body {
     cursor: not-allowed;
 }
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    flex: 1;
-}
-
-.stat-card {
+.stats-table-area {
     background: white;
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    min-width: 180px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    max-width: 700px;
 }
 
-.stat-card i {
-    font-size: 36px;
+.stats-table-area h3 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 16px;
+}
+
+.stats-table td i {
+    color: #667eea;
+    margin-right: 8px;
+    width: 16px;
+    text-align: center;
+}
+
+.stats-table td:nth-child(2) {
+    font-size: 20px;
+    font-weight: 600;
     color: #667eea;
 }
 
-.stat-value {
-    font-size: 28px;
-    font-weight: 600;
-    color: #333;
-    display: block;
-}
-
-.stat-label {
-    font-size: 13px;
+.stats-table td:nth-child(3) {
     color: #999;
+    font-size: 13px;
 }
 
 .modal {
@@ -630,6 +627,210 @@ body {
     background: #5a6fd6;
 }
 
+/* ========== 爬虫工具样式 ========== */
+.spider-config {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.spider-inputs {
+    flex: 1;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.spider-field {
+    margin-bottom: 14px;
+}
+
+.spider-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: #555;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.spider-field input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.3s ease;
+    box-sizing: border-box;
+}
+
+.spider-field input:focus {
+    border-color: #667eea;
+}
+
+.spider-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.spider-run-btn {
+    background: #667eea;
+    border: none;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.spider-run-btn:hover {
+    background: #5a6fd6;
+}
+
+.spider-clear-btn {
+    background: #f0f0f0;
+    border: none;
+    color: #666;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.spider-clear-btn:hover {
+    background: #e0e0e0;
+}
+
+.spider-save-btn {
+    background: #28a745;
+    border: none;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.spider-save-btn:hover {
+    background: #218838;
+}
+
+.spider-hint {
+    width: 260px;
+    min-width: 200px;
+    background: white;
+    padding: 16px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    align-self: flex-start;
+}
+
+.spider-hint h4 {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.hint-examples {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hint-examples code {
+    display: block;
+    background: #f5f7fa;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #667eea;
+    cursor: pointer;
+    word-break: break-all;
+    transition: background 0.2s ease;
+    border: 1px solid #e8ecf1;
+}
+
+.hint-examples code:hover {
+    background: #e8ecf1;
+}
+
+.spider-status {
+    display: flex;
+    align-items: center;
+    padding: 12px 18px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.spider-status.loading {
+    background: #e8f4fd;
+    color: #1e88e5;
+}
+
+.spider-status.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.spider-status.error {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.spider-results {
+    flex-direction: column;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.spider-results-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.spider-results-header h4 {
+    font-size: 15px;
+    color: #333;
+}
+
+.spider-table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.spider-group {
+    display: inline-block;
+    background: #e8f4fd;
+    color: #1e88e5;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin: 2px 4px 2px 0;
+}
+
 @media (max-width: 768px) {
     .admin-container {
         flex-direction: column;
@@ -729,18 +930,8 @@ body {
         font-size: 13px;
     }
     
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-    
-    .stat-card {
-        padding: 16px;
-        min-width: auto;
-    }
-    
-    .stat-value {
-        font-size: 22px;
+    .stats-table-area {
+        padding: 14px;
     }
     
     .action-btns {
@@ -750,6 +941,26 @@ body {
     .action-btn {
         padding: 4px 8px;
         font-size: 11px;
+    }
+
+    .spider-config {
+        flex-direction: column;
+    }
+
+    .spider-hint {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .spider-actions {
+        flex-direction: column;
+    }
+
+    .spider-run-btn,
+    .spider-clear-btn,
+    .spider-save-btn {
+        width: 100%;
+        justify-content: center;
     }
 }
 
@@ -835,23 +1046,12 @@ body {
         font-size: 13px;
     }
     
-    .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
+    .stats-table-area {
+        padding: 10px;
     }
-    
-    .stat-card {
-        padding: 14px;
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .stat-value {
-        font-size: 20px;
-    }
-    
-    .stat-label {
-        font-size: 12px;
+
+    .stats-table-area h3 {
+        font-size: 14px;
     }
     
     .data-table {
