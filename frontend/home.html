@@ -61,6 +61,38 @@
                     <i class="fas fa-search"></i>
                 </button>
             </div>
+            
+            <div class="recommend-section">
+                <div class="recommend-header">
+                    <h3><i class="fas fa-magic"></i> 智能标签推荐</h3>
+                    <p class="recommend-tip">输入或选择感兴趣的小说类别，为您精准推荐</p>
+                </div>
+                
+                <div class="recommend-input-area">
+                    <div class="selected-tags" id="selectedTags"></div>
+                    <div class="tag-input-row">
+                        <input type="text" id="tagInput" placeholder="输入类别标签（如：玄幻、仙侠、都市），按回车添加">
+                        <button class="recommend-btn" onclick="recommendByTags()">
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                            开始推荐
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="hot-tags-section">
+                    <h4><i class="fas fa-fire"></i> 热门标签</h4>
+                    <div class="hot-tags-list" id="hotTagsList"></div>
+                </div>
+            </div>
+            
+            <div class="recommend-results" id="recommendResults" style="display: none;">
+                <div class="section-header">
+                    <h2>推荐结果</h2>
+                    <span class="subtitle" id="recommendSubtitle"></span>
+                </div>
+                <div class="books-grid" id="recommendGrid"></div>
+            </div>
+            
             <div class="books-grid" id="searchResults"></div>
         </div>
 

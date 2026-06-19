@@ -636,4 +636,207 @@ body {
     .modal-actions {
         flex-direction: column;
     }
+    
+    .tag-input-row {
+        flex-direction: column;
+    }
+    
+    .recommend-btn {
+        width: 100%;
+    }
+}
+
+.recommend-section {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.recommend-header {
+    margin-bottom: 20px;
+}
+
+.recommend-header h3 {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.recommend-header h3 i {
+    color: #667eea;
+}
+
+.recommend-tip {
+    color: #999;
+    font-size: 14px;
+}
+
+.recommend-input-area {
+    margin-bottom: 20px;
+}
+
+.selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+    min-height: 36px;
+    align-items: center;
+}
+
+.no-tag-tip {
+    color: #bbb;
+    font-size: 14px;
+}
+
+.selected-tag {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.remove-tag-btn {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: all 0.2s;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.remove-tag-btn:hover {
+    background: rgba(255,255,255,0.4);
+}
+
+.tag-input-row {
+    display: flex;
+    gap: 12px;
+}
+
+.tag-input-row input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e8e8e8;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.tag-input-row input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.recommend-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.recommend-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+}
+
+.hot-tags-section {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 16px;
+}
+
+.hot-tags-section h4 {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hot-tags-section h4 i {
+    color: #ff6b6b;
+}
+
+.hot-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.hot-tag {
+    background: #fff5f5;
+    color: #ff6b6b;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid #ffe0e0;
+}
+
+.hot-tag:hover {
+    background: #ff6b6b;
+    color: white;
+    border-color: #ff6b6b;
+}
+
+.tag-count {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.recommend-results {
+    margin-bottom: 24px;
+}
+
+.recommend-card .book-cover {
+    position: relative;
+}
+
+.match-score-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.matched-tag {
+    background: linear-gradient(135deg, #ffd89b 0%, #ffb347 100%);
+    color: #8b4513;
+    font-weight: 500;
 }

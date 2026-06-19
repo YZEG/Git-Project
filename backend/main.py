@@ -19,7 +19,7 @@ API接口：
 - DELETE /api/books/{book_id} - 删除书籍
 """
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -52,6 +52,23 @@ DB_CONFIG = {
     'database': 'qidian_rank',
     'charset': 'utf8mb4',
 }
+
+# 简单的内存缓存
+cache = {
+    'hot_tags': {'data': None, 'expire_at': 0}
+}
+
+def get_cache(key):
+    if key in cache:
+        if time.time() < cache[key]['expire_at']:
+            return cache[key]['data']
+    return None
+
+def set_cache(key, data, ttl=300):
+    cache[key] = {
+        'data': data,
+        'expire_at': time.time() + ttl
+    }
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -957,6 +974,109 @@ async def spider(req: SpiderRequest, current_user: UserInDB = Depends(get_curren
         }
     except requests.RequestException as e:
         raise HTTPException(status_code=400, detail=f"请求URL失败: {str(e)}")
+
+# 获取热门标签
+@app.get("/api/tags/hot", summary="获取热门标签")
+async def get_hot_tags(
+    limit: int = Query(20, ge=1, le=50),
+    current_user: dict = Depends(get_current_user)
+):
+    """统计所有书籍的标签，返回热门标签列表（带缓存）"""
+    cache_key = f'hot_tags_{limit}'
+    cached = get_cache(cache_key)
+    if cached:
+        return cached
+    
+    conn = get_db_connection()
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT tags FROM books WHERE tags IS NOT NULL AND tags != ''")
+            results = cursor.fetchall()
+            
+            tag_counts = {}
+            for row in results:
+                tags_str = row['tags']
+                if tags_str:
+                    tags = [t.strip() for t in tags_str.split(',') if t.strip()]
+                    for tag in tags:
+                        tag_counts[tag] = tag_counts.get(tag, 0) + 1
+            
+            sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
+            
+            tags_list = [{"name": tag, "count": count} for tag, count in sorted_tags]
+            
+            result = {
+                "tags": tags_list,
+                "total": len(tags_list)
+            }
+            
+            set_cache(cache_key, result, ttl=600)
+            return result
+    finally:
+        conn.close()
+
+# 基于标签的智能推荐
+@app.get("/api/recommend/tags", summary="基于标签的小说推荐")
+async def recommend_by_tags(
+    tags: str = Query(..., description="标签列表，用逗号分隔"),
+    limit: int = Query(20, ge=1, le=100),
+    current_user: dict = Depends(get_current_user)
+):
+    """根据用户输入的标签，使用匹配算法推荐小说（优化：使用LIKE预过滤）"""
+    user_tags = [t.strip() for t in tags.split(',') if t.strip()]
+    if not user_tags:
+        raise HTTPException(status_code=400, detail="请至少提供一个标签")
+    
+    conn = get_db_connection()
+    try:
+        with conn.cursor(pymysql.cursors.DictCursor) as cursor:
+            like_conditions = []
+            params = []
+            for tag in user_tags:
+                like_conditions.append("tags LIKE %s")
+                params.append(f"%{tag}%")
+            
+            sql = f"SELECT * FROM books WHERE tags IS NOT NULL AND tags != '' AND ({' OR '.join(like_conditions)})"
+            cursor.execute(sql, params)
+            candidate_books = cursor.fetchall()
+            
+            scored_books = []
+            for book in candidate_books:
+                book_tags_str = book.get('tags', '') or ''
+                book_tags = [t.strip() for t in book_tags_str.split(',') if t.strip()]
+                
+                match_score = 0
+                matched_tags = []
+                
+                for user_tag in user_tags:
+                    for book_tag in book_tags:
+                        if user_tag == book_tag:
+                            match_score += 10
+                            matched_tags.append(book_tag)
+                        elif user_tag in book_tag or book_tag in user_tag:
+                            match_score += 5
+                            if book_tag not in matched_tags:
+                                matched_tags.append(book_tag)
+                
+                if match_score > 0:
+                    scored_books.append({
+                        **book,
+                        'match_score': match_score,
+                        'matched_tags': list(set(matched_tags)),
+                        'match_count': len(set(matched_tags))
+                    })
+            
+            scored_books.sort(key=lambda x: (x['match_score'], x['match_count']), reverse=True)
+            
+            recommended = scored_books[:limit]
+            
+            return {
+                "books": recommended,
+                "total": len(scored_books),
+                "query_tags": user_tags
+            }
+    finally:
+        conn.close()
 
 # 健康检查接口
 @app.get("/api/health", summary="健康检查")

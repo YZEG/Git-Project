@@ -2,6 +2,7 @@ const API_BASE_URL = 'http://localhost:5001';
 
 let currentBook = null;
 let favorites = [];
+let selectedTagsList = [];
 
 document.addEventListener('DOMContentLoaded', function() {
     checkLogin();
@@ -15,9 +16,53 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    loadBooks();
-    loadFavorites();
+    document.getElementById('tagInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addTagFromInput();
+        }
+    });
+    
+    initPage();
 });
+
+function initPage() {
+    loadBooks();
+    loadFavorites().then(() => {
+        refreshFavoriteBadgeForAll();
+    });
+    setTimeout(() => {
+        loadHotTags();
+    }, 500);
+}
+
+function refreshFavoriteBadgeForAll() {
+    const cards = document.querySelectorAll('.book-card');
+    cards.forEach(card => {
+        const titleElement = card.querySelector('.book-title');
+        if (!titleElement) return;
+        
+        const currentBookId = parseInt(titleElement.dataset.bookId);
+        if (isNaN(currentBookId)) return;
+        
+        const badgeEl = card.querySelector('.favorite-badge');
+        const icon = card.querySelector('.favorite-badge i');
+        if (!badgeEl || !icon) return;
+        
+        const isFavorited = favorites.includes(currentBookId);
+        
+        if (isFavorited) {
+            badgeEl.classList.add('favorited');
+            icon.classList.remove('fa-heart-o');
+            icon.classList.add('fa-heart');
+        } else {
+            badgeEl.classList.remove('favorited');
+            icon.classList.remove('fa-heart');
+            icon.classList.add('fa-heart-o');
+        }
+    });
+    updateFavCount();
+}
 
 function checkLogin() {
     const token = localStorage.getItem('token');
@@ -360,3 +405,168 @@ document.getElementById('bookModal').addEventListener('click', function(e) {
         closeModal();
     }
 });
+
+async function loadHotTags() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/api/tags/hot?limit=20`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            renderHotTags(data.tags);
+        }
+    } catch (error) {
+        console.error('加载热门标签失败:', error);
+    }
+}
+
+function renderHotTags(tags) {
+    const container = document.getElementById('hotTagsList');
+    container.innerHTML = '';
+    
+    tags.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'hot-tag';
+        tagEl.innerHTML = `${tag.name} <span class="tag-count">${tag.count}</span>`;
+        tagEl.onclick = () => selectTag(tag.name);
+        container.appendChild(tagEl);
+    });
+}
+
+function addTagFromInput() {
+    const input = document.getElementById('tagInput');
+    const tag = input.value.trim();
+    if (tag) {
+        selectTag(tag);
+        input.value = '';
+    }
+}
+
+function selectTag(tagName) {
+    if (selectedTagsList.includes(tagName)) {
+        return;
+    }
+    selectedTagsList.push(tagName);
+    renderSelectedTags();
+}
+
+function removeTag(tagName) {
+    selectedTagsList = selectedTagsList.filter(t => t !== tagName);
+    renderSelectedTags();
+}
+
+function renderSelectedTags() {
+    const container = document.getElementById('selectedTags');
+    container.innerHTML = '';
+    
+    if (selectedTagsList.length === 0) {
+        container.innerHTML = '<span class="no-tag-tip">请选择或输入您感兴趣的小说类别</span>';
+        return;
+    }
+    
+    selectedTagsList.forEach(tag => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'selected-tag';
+        tagEl.innerHTML = `${tag} <span class="remove-tag-btn" onclick="removeTag('${tag}')">&times;</span>`;
+        container.appendChild(tagEl);
+    });
+}
+
+async function recommendByTags() {
+    if (selectedTagsList.length === 0) {
+        alert('请至少选择一个标签');
+        return;
+    }
+    
+    const tagsStr = selectedTagsList.join(',');
+    
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE_URL}/api/recommend/tags?tags=${encodeURIComponent(tagsStr)}&limit=20`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('recommendSubtitle').textContent = `根据您选择的"${selectedTagsList.join('、')}"，为您找到 ${data.total} 本相关小说`;
+            document.getElementById('recommendResults').style.display = 'block';
+            
+            if (data.books && data.books.length > 0) {
+                const booksWithMatch = data.books.map(book => {
+                    return {
+                        ...book,
+                        showMatchScore: true
+                    };
+                });
+                renderRecommendBooks(booksWithMatch, 'recommendGrid');
+            } else {
+                document.getElementById('recommendGrid').innerHTML = '<p style="text-align:center;color:#999;padding:40px;">没有找到匹配的小说，请尝试其他标签</p>';
+            }
+        }
+    } catch (error) {
+        console.error('推荐失败:', error);
+        alert('推荐请求失败，请重试');
+    }
+}
+
+function renderRecommendBooks(books, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    
+    if (books.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">暂无推荐书籍</p>';
+        return;
+    }
+    
+    books.forEach(book => {
+        const isFavorited = favorites.includes(book.id);
+        const card = createRecommendCard(book, isFavorited);
+        container.appendChild(card);
+    });
+}
+
+function createRecommendCard(book, isFavorited) {
+    const card = document.createElement('div');
+    card.className = 'book-card recommend-card';
+    card.onclick = () => showBookDetail(book);
+    
+    const tags = book.tags ? book.tags.split(',').slice(0, 3) : [];
+    const matchTags = book.matched_tags || [];
+    
+    card.innerHTML = `
+        <div class="book-cover">
+            <i class="fas fa-book"></i>
+            <span class="favorite-badge${isFavorited ? ' favorited' : ''}" onclick="event.stopPropagation(); toggleFavoriteCard(${book.id})">
+                <i class="fas fa-heart${isFavorited ? '' : '-o'}"></i>
+            </span>
+            ${book.showMatchScore ? `<span class="match-score-badge"><i class="fas fa-star"></i> 匹配度 ${Math.min(100, Math.round(book.match_score * 10))}%</span>` : ''}
+        </div>
+        <div class="book-info">
+            <h3 class="book-title" data-book-id="${book.id}">${book.name}</h3>
+            <p class="book-author">${book.author}</p>
+            <div class="book-tags">
+                ${tags.map(tag => {
+                    const isMatched = matchTags.includes(tag.trim());
+                    return `<span class="tag${isMatched ? ' matched-tag' : ''}">${tag.trim()}</span>`;
+                }).join('')}
+            </div>
+            <span class="book-status ${book.status === '连载' ? 'serializing' : 'completed'}">${book.status}</span>
+        </div>
+    `;
+    
+    const titleElement = card.querySelector('.book-title');
+    titleElement.onclick = (e) => {
+        e.stopPropagation();
+        showBookDetail(book);
+    };
+    
+    return card;
+}
+
+renderSelectedTags();
