@@ -9,118 +9,167 @@
 </head>
 <body>
     <header class="header">
-        <div class="logo">
-            <i class="fas fa-book-open"></i>
-            <span>小说推荐网</span>
+        <div class="header-left">
+            <a href="/" class="logo">
+                <i class="fas fa-book-open"></i>
+                <span>小说推荐网</span>
+            </a>
+            <nav class="nav">
+                <button class="nav-btn active" data-tab="recommend">推荐</button>
+                <button class="nav-btn" data-tab="search">搜索</button>
+                <button class="nav-btn" data-tab="favorites">我的收藏</button>
+            </nav>
         </div>
-        <nav class="nav">
-            <button class="nav-btn active" data-tab="recommend">推荐</button>
-            <button class="nav-btn" data-tab="search">搜索</button>
-            <button class="nav-btn" data-tab="favorites">我的收藏</button>
-        </nav>
-        <div class="user-info">
-            <span id="username">用户</span>
-            <button class="logout-btn" onclick="logout()">退出</button>
+        <div class="header-right">
+            <div class="user-dropdown">
+                <span id="username" class="username">用户</span>
+                <i class="fas fa-caret-down"></i>
+                <div class="dropdown-menu">
+                    <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                </div>
+            </div>
         </div>
     </header>
 
     <main class="main-content">
-        <div class="tab-content active" id="recommend">
-            <div class="section-header">
-                <h2>今日推荐</h2>
-                <span class="subtitle">为您精选的热门小说</span>
-            </div>
-            <div class="stats-row">
-                <div class="stat-card">
-                    <i class="fas fa-book"></i>
-                    <div>
-                        <span class="stat-value" id="totalBooks">0</span>
-                        <span class="stat-label">小说总数</span>
+        <div class="content-wrapper">
+            <div class="tab-content active" id="recommend">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h2>今日推荐</h2>
+                        <p class="subtitle">为您精选的热门小说</p>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <i class="fas fa-star"></i>
-                    <div>
-                        <span class="stat-value" id="favCount">0</span>
-                        <span class="stat-label">我的收藏</span>
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <i class="fas fa-book"></i>
+                        <div>
+                            <span class="stat-value" id="totalBooks">0</span>
+                            <span class="stat-label">小说总数</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-star"></i>
+                        <div>
+                            <span class="stat-value" id="favCount">0</span>
+                            <span class="stat-label">我的收藏</span>
+                        </div>
                     </div>
                 </div>
+                <div class="books-grid" id="booksGrid"></div>
             </div>
-            <div class="books-grid" id="booksGrid"></div>
+
+            <div class="tab-content" id="search">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h2>搜索小说</h2>
+                        <p class="subtitle">搜索您感兴趣的书籍</p>
+                    </div>
+                </div>
+                <div class="search-box">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="搜索小说名称、作者...">
+                    </div>
+                    <select id="statusFilter">
+                        <option value="">全部状态</option>
+                        <option value="连载">连载中</option>
+                        <option value="完结">已完结</option>
+                    </select>
+                    <button class="search-btn" onclick="searchBooks()">
+                        <i class="fas fa-search"></i>
+                        搜索
+                    </button>
+                </div>
+
+                <div class="recommend-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-magic"></i> 智能标签推荐</h3>
+                        <p class="section-desc">输入或选择感兴趣的小说类别，为您精准推荐</p>
+                    </div>
+                    <div class="recommend-input-area">
+                        <div class="selected-tags" id="selectedTags"></div>
+                        <div class="tag-input-row">
+                            <input type="text" id="tagInput" placeholder="输入类别标签（如：玄幻、仙侠、都市），按回车添加">
+                            <button class="recommend-btn" onclick="recommendByTags()">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                                开始推荐
+                            </button>
+                        </div>
+                    </div>
+                    <div class="hot-tags-section">
+                        <h4><i class="fas fa-fire"></i> 热门标签</h4>
+                        <div class="hot-tags-list" id="hotTagsList"></div>
+                    </div>
+                </div>
+
+                <div class="recommend-results" id="recommendResults" style="display: none;">
+                    <div class="section-header">
+                        <h2>推荐结果</h2>
+                        <p class="section-desc" id="recommendSubtitle"></p>
+                    </div>
+                    <div class="books-grid" id="recommendGrid"></div>
+                </div>
+
+                <div class="books-grid" id="searchResults"></div>
+            </div>
+
+            <div class="tab-content" id="favorites">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h2>我的收藏</h2>
+                        <p class="subtitle">收藏您喜欢的小说</p>
+                    </div>
+                </div>
+                <div class="books-grid" id="favoritesGrid"></div>
+                <div class="empty-state" id="emptyFavorites" style="display: none;">
+                    <i class="fas fa-heart-broken"></i>
+                    <p>暂无收藏的小说</p>
+                    <button class="empty-btn" onclick="switchTab('recommend')">去看看推荐</button>
+                </div>
+            </div>
         </div>
 
-        <div class="tab-content" id="search">
-            <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="搜索小说名称、作者...">
-                <select id="statusFilter">
-                    <option value="">全部状态</option>
-                    <option value="连载">连载中</option>
-                    <option value="完结">已完结</option>
-                </select>
-                <button class="search-btn" onclick="searchBooks()">
-                    <i class="fas fa-search"></i>
-                </button>
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3>热门标签</h3>
+                <div class="sidebar-tags" id="sidebarTags"></div>
             </div>
-            
-            <div class="recommend-section">
-                <div class="recommend-header">
-                    <h3><i class="fas fa-magic"></i> 智能标签推荐</h3>
-                    <p class="recommend-tip">输入或选择感兴趣的小说类别，为您精准推荐</p>
-                </div>
-                
-                <div class="recommend-input-area">
-                    <div class="selected-tags" id="selectedTags"></div>
-                    <div class="tag-input-row">
-                        <input type="text" id="tagInput" placeholder="输入类别标签（如：玄幻、仙侠、都市），按回车添加">
-                        <button class="recommend-btn" onclick="recommendByTags()">
-                            <i class="fas fa-wand-magic-sparkles"></i>
-                            开始推荐
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="hot-tags-section">
-                    <h4><i class="fas fa-fire"></i> 热门标签</h4>
-                    <div class="hot-tags-list" id="hotTagsList"></div>
+            <div class="sidebar-section">
+                <h3>快速操作</h3>
+                <div class="sidebar-actions">
+                    <a href="#" onclick="switchTab('search')"><i class="fas fa-search"></i> 搜索小说</a>
+                    <a href="#" onclick="switchTab('favorites')"><i class="fas fa-heart"></i> 我的收藏</a>
                 </div>
             </div>
-            
-            <div class="recommend-results" id="recommendResults" style="display: none;">
-                <div class="section-header">
-                    <h2>推荐结果</h2>
-                    <span class="subtitle" id="recommendSubtitle"></span>
-                </div>
-                <div class="books-grid" id="recommendGrid"></div>
-            </div>
-            
-            <div class="books-grid" id="searchResults"></div>
-        </div>
-
-        <div class="tab-content" id="favorites">
-            <div class="section-header">
-                <h2>我的收藏</h2>
-                <span class="subtitle">收藏您喜欢的小说</span>
-            </div>
-            <div class="books-grid" id="favoritesGrid"></div>
-            <div class="empty-state" id="emptyFavorites" style="display: none;">
-                <i class="fas fa-heart-broken"></i>
-                <p>暂无收藏的小说</p>
-                <button class="empty-btn" onclick="switchTab('recommend')">去看看推荐</button>
-            </div>
-        </div>
+        </aside>
     </main>
 
     <div class="book-modal" id="bookModal">
+        <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-content">
-            <span class="close-modal" onclick="closeModal()">&times;</span>
-            <div class="modal-body">
+            <div class="modal-header">
                 <h3 id="modalTitle"></h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
                 <div class="modal-info">
-                    <span class="author">作者：<span id="modalAuthor"></span></span>
-                    <span class="status" id="modalStatus"></span>
+                    <div class="info-row">
+                        <span class="info-label">作者</span>
+                        <span class="info-value" id="modalAuthor"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">状态</span>
+                        <span class="info-value">
+                            <span class="status" id="modalStatus"></span>
+                        </span>
+                    </div>
                 </div>
-                <div class="tags" id="modalTags"></div>
-                <p class="intro" id="modalIntro"></p>
+                <div class="modal-tags" id="modalTags"></div>
+                <div class="modal-intro">
+                    <h4>简介</h4>
+                    <p id="modalIntro"></p>
+                </div>
                 <div class="modal-actions">
                     <button class="action-btn favorite-btn" id="favoriteBtn" onclick="toggleFavorite()">
                         <i class="fas fa-heart"></i>

@@ -1,17 +1,10 @@
 import pymysql
-
-DB_CONFIG = {
-    'host': 'localhost',
-    'port': 3306,
-    'user': 'root',
-    'password': 'HYZ666@',
-    'database': 'qidian_rank',
-    'charset': 'utf8mb4',
-}
+from db_config import get_db_config
 
 def create_admin():
+    config = get_db_config()
     try:
-        conn = pymysql.connect(**DB_CONFIG)
+        conn = pymysql.connect(**config)
         cursor = conn.cursor()
 
         cursor.execute("SELECT id FROM users WHERE username = 'admin'")

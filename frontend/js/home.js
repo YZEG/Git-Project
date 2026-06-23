@@ -401,7 +401,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 document.getElementById('bookModal').addEventListener('click', function(e) {
-    if (e.target === this) {
+    if (e.target.classList.contains('modal-overlay')) {
         closeModal();
     }
 });
@@ -427,7 +427,7 @@ async function loadHotTags() {
 function renderHotTags(tags) {
     const container = document.getElementById('hotTagsList');
     container.innerHTML = '';
-    
+
     tags.forEach(tag => {
         const tagEl = document.createElement('span');
         tagEl.className = 'hot-tag';
@@ -435,6 +435,19 @@ function renderHotTags(tags) {
         tagEl.onclick = () => selectTag(tag.name);
         container.appendChild(tagEl);
     });
+
+    // Also render in sidebar
+    const sidebarContainer = document.getElementById('sidebarTags');
+    if (sidebarContainer) {
+        sidebarContainer.innerHTML = '';
+        tags.slice(0, 10).forEach(tag => {
+            const tagEl = document.createElement('span');
+            tagEl.className = 'sidebar-tag';
+            tagEl.textContent = tag.name;
+            tagEl.onclick = () => selectTag(tag.name);
+            sidebarContainer.appendChild(tagEl);
+        });
+    }
 }
 
 function addTagFromInput() {

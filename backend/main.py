@@ -27,6 +27,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 import pymysql
 import requests
+from db_config import get_db_config
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
@@ -43,15 +44,8 @@ SECRET_KEY = "your-secret-key-here-change-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# MySQL数据库配置
-DB_CONFIG = {
-    'host': 'localhost',
-    'port': 3306,
-    'user': 'root',
-    'password': 'HYZ666@',
-    'database': 'qidian_rank',
-    'charset': 'utf8mb4',
-}
+# MySQL数据库配置（启动时通过用户输入获取）
+DB_CONFIG = None
 
 # 简单的内存缓存
 cache = {
@@ -178,11 +172,18 @@ class UserInDB(UserResponse):
 
 def get_db_connection():
     """获取数据库连接"""
+    init_db_config()
     try:
         conn = pymysql.connect(**DB_CONFIG)
         return conn
     except pymysql.Error as e:
         raise HTTPException(status_code=500, detail=f"数据库连接失败: {str(e)}")
+
+def init_db_config():
+    """初始化数据库配置（首次调用时提示用户输入）"""
+    global DB_CONFIG
+    if DB_CONFIG is None:
+        DB_CONFIG = get_db_config()
 
 def get_user_from_db(username: str):
     """从数据库获取用户"""
@@ -1116,8 +1117,10 @@ def release_port(port):
 
 if __name__ == "__main__":
     import uvicorn
-    
+
+    init_db_config()
+
     PORT = 5001
     release_port(PORT)
-    
+
     uvicorn.run(app, host="0.0.0.0", port=PORT)

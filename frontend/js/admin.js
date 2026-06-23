@@ -7,46 +7,58 @@ let editingUser = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     checkLogin();
-    
+
     document.getElementById('adminName').textContent = localStorage.getItem('username') || '管理员';
-    
+
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
         item.addEventListener('click', function() {
             switchPage(this.dataset.page);
         });
     });
-    
+
     document.getElementById('bookForm').addEventListener('submit', function(e) {
         e.preventDefault();
         saveBook();
     });
-    
+
     document.getElementById('userForm').addEventListener('submit', function(e) {
         e.preventDefault();
         saveUser();
     });
-    
+
     document.getElementById('detailModal').addEventListener('click', function(e) {
-        if (e.target === this) {
+        if (e.target.classList.contains('modal-overlay')) {
             closeDetailModal();
         }
     });
-    
+
+    document.getElementById('bookModal').addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-overlay')) {
+            closeModal();
+        }
+    });
+
+    document.getElementById('userModal').addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-overlay')) {
+            closeUserModal();
+        }
+    });
+
     document.getElementById('bookTagsInput').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             addTag();
         }
     });
-    
+
     loadBooks();
 });
 
 function checkLogin() {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
-    
+
     if (!token || role !== 'admin') {
         window.location.href = 'index.html';
     }
@@ -62,33 +74,18 @@ function logout() {
 function switchPage(pageName) {
     const pages = document.querySelectorAll('.page');
     const navItems = document.querySelectorAll('.nav-item');
-    
+
     pages.forEach(page => page.classList.remove('active'));
     navItems.forEach(item => item.classList.remove('active'));
-    
+
     document.getElementById(pageName).classList.add('active');
     document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
-    
-    document.getElementById('pageTitle').textContent = {
-        books: '书籍管理',
-        users: '用户管理',
-        statistics: '数据统计',
-        spider: '爬虫工具'
-    }[pageName];
 
-    const addBtn = document.getElementById('addBtn');
     if (pageName === 'books') {
-        addBtn.style.display = 'flex';
-        addBtn.onclick = openAddModal;
         loadBooks();
     } else if (pageName === 'users') {
-        addBtn.style.display = 'flex';
-        addBtn.onclick = openAddUserModal;
         loadUsers();
-    } else if (pageName === 'spider') {
-        addBtn.style.display = 'none';
-    } else {
-        addBtn.style.display = 'none';
+    } else if (pageName === 'statistics') {
         loadStatistics();
     }
 }
@@ -101,7 +98,7 @@ async function loadBooks(page = 1) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             renderBooks(data.books);
@@ -116,12 +113,12 @@ async function loadBooks(page = 1) {
 function renderBooks(books) {
     const tbody = document.getElementById('booksTableBody');
     tbody.innerHTML = '';
-    
+
     if (books.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:30px;">暂无书籍</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#656d76;padding:30px;">暂无书籍</td></tr>';
         return;
     }
-    
+
     books.forEach(book => {
         const tags = book.tags ? book.tags.split(',').map(tag => `<span class="table-tag">${tag.trim()}</span>`).join('') : '-';
         const row = document.createElement('tr');
@@ -130,7 +127,7 @@ function renderBooks(books) {
             <td><span class="book-name-link" onclick="showBookDetail(${book.id})">${book.name}</span></td>
             <td>${book.author}</td>
             <td><span class="status-badge ${book.status === '连载' ? 'serializing' : 'completed'}">${book.status}</span></td>
-            <td style="display: flex; flex-wrap: wrap; gap: 6px;">${tags}</td>
+            <td style="display: flex; flex-wrap: wrap; gap: 4px;">${tags}</td>
             <td>
                 <div class="action-btns">
                     <button class="action-btn edit-btn" onclick="editBook(${book.id})">编辑</button>
@@ -150,15 +147,15 @@ async function showBookDetail(bookId) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (response.ok) {
             const book = await response.json();
             document.getElementById('detailModalTitle').textContent = book.name;
             document.getElementById('detailAuthor').textContent = book.author;
             document.getElementById('detailStatus').textContent = book.status;
             document.getElementById('detailStatus').className = `status ${book.status === '连载' ? 'serializing' : 'completed'}`;
-            document.getElementById('detailTags').innerHTML = book.tags ? 
-                book.tags.split(',').map(tag => `<span class="detail-tag">${tag.trim()}</span>`).join('') : '<span style="color:#999;">无</span>';
+            document.getElementById('detailTags').innerHTML = book.tags ?
+                book.tags.split(',').map(tag => `<span class="detail-tag">${tag.trim()}</span>`).join('') : '<span style="color:#656d76;">无</span>';
             document.getElementById('detailIntro').textContent = book.intro || '暂无简介';
             document.getElementById('detailModal').classList.add('show');
         }
@@ -174,21 +171,21 @@ function closeDetailModal() {
 function renderPagination(totalPages, currentPage, type) {
     const container = document.getElementById(`${type}Pagination`);
     container.innerHTML = '';
-    
+
     const maxVisible = 5;
     let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
     let end = Math.min(totalPages, start + maxVisible - 1);
-    
+
     if (end - start + 1 < maxVisible) {
         start = Math.max(1, end - maxVisible + 1);
     }
-    
+
     const prevBtn = document.createElement('button');
     prevBtn.textContent = '上一页';
     prevBtn.disabled = currentPage <= 1;
     prevBtn.onclick = () => type === 'books' ? loadBooks(currentPage - 1) : loadUsers(currentPage - 1);
     container.appendChild(prevBtn);
-    
+
     for (let i = start; i <= end; i++) {
         const btn = document.createElement('button');
         btn.textContent = i;
@@ -196,7 +193,7 @@ function renderPagination(totalPages, currentPage, type) {
         btn.onclick = () => type === 'books' ? loadBooks(i) : loadUsers(i);
         container.appendChild(btn);
     }
-    
+
     const nextBtn = document.createElement('button');
     nextBtn.textContent = '下一页';
     nextBtn.disabled = currentPage >= totalPages;
@@ -297,11 +294,11 @@ async function saveBook() {
         tags: getTagsValue() || null,
         intro: document.getElementById('bookIntro').value || null
     };
-    
+
     try {
         const token = localStorage.getItem('token');
         let response;
-        
+
         if (editingBook) {
             response = await fetch(`${API_BASE_URL}/api/books/${editingBook.id}`, {
                 method: 'PUT',
@@ -321,7 +318,7 @@ async function saveBook() {
                 body: JSON.stringify(bookData)
             });
         }
-        
+
         if (response.ok) {
             closeModal();
             loadBooks(currentBookPage);
@@ -341,7 +338,7 @@ function closeModal() {
 
 async function deleteBook(bookId) {
     if (!confirm('确定要删除这本书籍吗？')) return;
-    
+
     try {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_BASE_URL}/api/books/${bookId}`, {
@@ -350,7 +347,7 @@ async function deleteBook(bookId) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (response.ok) {
             loadBooks(currentBookPage);
         } else {
@@ -365,12 +362,12 @@ async function deleteBook(bookId) {
 function searchBooks() {
     const keyword = document.getElementById('bookSearch').value;
     const status = document.getElementById('bookStatusFilter').value;
-    
+
     if (!keyword && !status) {
         loadBooks(1);
         return;
     }
-    
+
     fetchBooks(keyword, status);
 }
 
@@ -378,16 +375,16 @@ async function fetchBooks(keyword = '', status = '') {
     try {
         const token = localStorage.getItem('token');
         let url = `${API_BASE_URL}/api/books/search?page=1&page_size=10`;
-        
+
         if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
         if (status) url += `&status=${encodeURIComponent(status)}`;
-        
+
         const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             renderBooks(data.books);
@@ -407,7 +404,7 @@ async function loadUsers(page = 1) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             renderUsers(data.users);
@@ -422,12 +419,12 @@ async function loadUsers(page = 1) {
 function renderUsers(users) {
     const tbody = document.getElementById('usersTableBody');
     tbody.innerHTML = '';
-    
+
     if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:30px;">暂无用户</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#656d76;padding:30px;">暂无用户</td></tr>';
         return;
     }
-    
+
     users.forEach(user => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -453,7 +450,7 @@ function formatDate(dateStr) {
     return date.toLocaleDateString('zh-CN');
 }
 
-function openAddUserModal() {
+function openUserModal() {
     editingUser = null;
     document.getElementById('userModalTitle').textContent = '新增用户';
     document.getElementById('userId').value = '';
@@ -494,16 +491,16 @@ async function saveUser() {
         phone: document.getElementById('userPhone').value || null,
         role: document.getElementById('userRole').value
     };
-    
+
     const password = document.getElementById('userPassword').value;
     if (password) {
         userData.password = password;
     }
-    
+
     try {
         const token = localStorage.getItem('token');
         let response;
-        
+
         if (userId) {
             response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
                 method: 'PUT',
@@ -523,7 +520,7 @@ async function saveUser() {
                 body: JSON.stringify(userData)
             });
         }
-        
+
         if (response.ok) {
             closeUserModal();
             loadUsers(currentUserPage);
@@ -543,7 +540,7 @@ function closeUserModal() {
 
 async function deleteUser(userId) {
     if (!confirm('确定要删除这个用户吗？')) return;
-    
+
     try {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
@@ -552,7 +549,7 @@ async function deleteUser(userId) {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (response.ok) {
             loadUsers(currentUserPage);
         } else {
@@ -567,12 +564,12 @@ async function deleteUser(userId) {
 function searchUsers() {
     const keyword = document.getElementById('userSearch').value;
     const role = document.getElementById('userRoleFilter').value;
-    
+
     if (!keyword && !role) {
         loadUsers(1);
         return;
     }
-    
+
     fetchUsers(keyword, role);
 }
 
@@ -580,16 +577,16 @@ async function fetchUsers(keyword = '', role = '') {
     try {
         const token = localStorage.getItem('token');
         let url = `${API_BASE_URL}/api/users/search?page=1&page_size=10`;
-        
+
         if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
         if (role) url += `&role=${encodeURIComponent(role)}`;
-        
+
         const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             renderUsers(data.users);
@@ -604,22 +601,22 @@ async function fetchUsers(keyword = '', role = '') {
 async function loadStatistics() {
     try {
         const token = localStorage.getItem('token');
-        
+
         const booksResponse = await fetch(`${API_BASE_URL}/api/books`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const booksData = await booksResponse.json();
-        
+
         const usersResponse = await fetch(`${API_BASE_URL}/api/users`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const usersData = await usersResponse.json();
-        
+
         const searchResponse = await fetch(`${API_BASE_URL}/api/books/search?status=连载`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const serializingData = await searchResponse.json();
-        
+
         document.getElementById('statBooks').textContent = booksData.total;
         document.getElementById('statUsers').textContent = usersData.total;
         document.getElementById('statSerializing').textContent = serializingData.total;
@@ -658,7 +655,7 @@ async function runQidianSpider() {
     const statusText = document.getElementById('spiderStatusText');
     statusEl.style.display = 'flex';
     statusEl.className = 'spider-status loading';
-    statusText.textContent = `正在爬取起点月票榜第 ${pages} 页，请稍候（含状态检测可能需要较长时间）...`;
+    statusText.textContent = `正在爬取起点月票榜第 ${pages} 页，请稍候...`;
     document.getElementById('spiderResults').style.display = 'none';
 
     try {
@@ -698,7 +695,7 @@ function renderQidianResults(books) {
     document.getElementById('spiderCount').textContent = books.length;
 
     if (books.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:30px;">无数据</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#656d76;padding:30px;">无数据</td></tr>';
         return;
     }
 

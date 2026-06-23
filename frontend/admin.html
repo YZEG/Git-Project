@@ -8,51 +8,73 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="admin-container">
-        <aside class="sidebar">
-            <div class="logo">
+    <header class="admin-header">
+        <div class="header-left">
+            <a href="/" class="logo">
                 <i class="fas fa-book-open"></i>
                 <span>小说推荐网</span>
+            </a>
+            <span class="header-divider">/</span>
+            <span class="header-title">管理后台</span>
+        </div>
+        <div class="header-right">
+            <a href="/home" class="header-link"><i class="fas fa-home"></i> 前台首页</a>
+            <div class="user-dropdown">
+                <span id="adminName" class="username">管理员</span>
+                <i class="fas fa-caret-down"></i>
+                <div class="dropdown-menu">
+                    <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                </div>
             </div>
+        </div>
+    </header>
+
+    <div class="admin-container">
+        <aside class="sidebar">
             <nav class="sidebar-nav">
-                <button class="nav-item active" data-page="books">
-                    <i class="fas fa-book"></i>
-                    <span>书籍管理</span>
-                </button>
-                <button class="nav-item" data-page="users">
-                    <i class="fas fa-users"></i>
-                    <span>用户管理</span>
-                </button>
-                <button class="nav-item" data-page="statistics">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>数据统计</span>
-                </button>
-                <button class="nav-item" data-page="spider">
-                    <i class="fas fa-spider"></i>
-                    <span>爬虫工具</span>
-                </button>
+                <div class="nav-section">
+                    <h3 class="nav-section-title">数据管理</h3>
+                    <button class="nav-item active" data-page="books">
+                        <i class="fas fa-book"></i>
+                        <span>书籍管理</span>
+                    </button>
+                    <button class="nav-item" data-page="users">
+                        <i class="fas fa-users"></i>
+                        <span>用户管理</span>
+                    </button>
+                </div>
+                <div class="nav-section">
+                    <h3 class="nav-section-title">系统工具</h3>
+                    <button class="nav-item" data-page="statistics">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>数据统计</span>
+                    </button>
+                    <button class="nav-item" data-page="spider">
+                        <i class="fas fa-spider"></i>
+                        <span>爬虫工具</span>
+                    </button>
+                </div>
             </nav>
-            <div class="sidebar-footer">
-                <span id="adminName">管理员</span>
-                <button class="logout-btn" onclick="logout()">退出</button>
-            </div>
         </aside>
 
         <main class="main-panel">
-            <header class="panel-header">
-                <h1 id="pageTitle">书籍管理</h1>
-                <div class="header-actions">
-                    <button class="add-btn" id="addBtn" onclick="openAddModal()">
-                        <i class="fas fa-plus"></i>
-                        <span>新增</span>
-                    </button>
-                </div>
-            </header>
-
             <div class="page-content">
                 <div class="page active" id="books">
+                    <div class="page-header">
+                        <div class="page-title">
+                            <h2>书籍管理</h2>
+                            <p class="page-desc">管理系统中的所有书籍数据</p>
+                        </div>
+                        <button class="add-btn" id="addBtn" onclick="openAddModal()">
+                            <i class="fas fa-plus"></i>
+                            <span>新增书籍</span>
+                        </button>
+                    </div>
                     <div class="search-area">
-                        <input type="text" id="bookSearch" placeholder="搜索书名或作者...">
+                        <div class="search-input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="bookSearch" placeholder="搜索书名或作者...">
+                        </div>
                         <select id="bookStatusFilter">
                             <option value="">全部状态</option>
                             <option value="连载">连载中</option>
@@ -60,27 +82,43 @@
                         </select>
                         <button class="search-btn" onclick="searchBooks()">
                             <i class="fas fa-search"></i>
+                            搜索
                         </button>
                     </div>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>书名</th>
-                                <th>作者</th>
-                                <th>状态</th>
-                                <th>标签</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="booksTableBody"></tbody>
-                    </table>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>书名</th>
+                                    <th>作者</th>
+                                    <th>状态</th>
+                                    <th>标签</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="booksTableBody"></tbody>
+                        </table>
+                    </div>
                     <div class="pagination" id="booksPagination"></div>
                 </div>
 
                 <div class="page" id="users">
+                    <div class="page-header">
+                        <div class="page-title">
+                            <h2>用户管理</h2>
+                            <p class="page-desc">管理系统中的所有用户</p>
+                        </div>
+                        <button class="add-btn" onclick="openUserModal()">
+                            <i class="fas fa-plus"></i>
+                            <span>新增用户</span>
+                        </button>
+                    </div>
                     <div class="search-area">
-                        <input type="text" id="userSearch" placeholder="搜索用户名或手机号...">
+                        <div class="search-input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="userSearch" placeholder="搜索用户名或手机号...">
+                        </div>
                         <select id="userRoleFilter">
                             <option value="">全部角色</option>
                             <option value="admin">管理员</option>
@@ -88,106 +126,117 @@
                         </select>
                         <button class="search-btn" onclick="searchUsers()">
                             <i class="fas fa-search"></i>
+                            搜索
                         </button>
                     </div>
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>用户名</th>
-                                <th>手机号</th>
-                                <th>角色</th>
-                                <th>创建时间</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody"></tbody>
-                    </table>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>手机号</th>
+                                    <th>角色</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
+                    </div>
                     <div class="pagination" id="usersPagination"></div>
                 </div>
 
                 <div class="page" id="statistics">
-                    <div class="stats-table-area">
-                        <h3>系统数据概览</h3>
-                        <table class="data-table stats-table">
-                            <thead>
-                                <tr>
-                                    <th>统计项</th>
-                                    <th>数值</th>
-                                    <th>说明</th>
-                                </tr>
-                            </thead>
-                            <tbody id="statsTableBody">
-                                <tr>
-                                    <td><i class="fas fa-book"></i> 书籍总数</td>
-                                    <td id="statBooks">0</td>
-                                    <td>系统中所有书籍的数量</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="fas fa-users"></i> 用户总数</td>
-                                    <td id="statUsers">0</td>
-                                    <td>注册用户总数（含管理员）</td>
-                                </tr>
-                                <tr>
-                                    <td><i class="fas fa-edit"></i> 连载中</td>
-                                    <td id="statSerializing">0</td>
-                                    <td>当前状态为连载的书籍数量</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="page-header">
+                        <div class="page-title">
+                            <h2>数据统计</h2>
+                            <p class="page-desc">系统数据概览</p>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stats-card">
+                            <div class="stats-icon"><i class="fas fa-book"></i></div>
+                            <div class="stats-info">
+                                <span class="stats-value" id="statBooks">0</span>
+                                <span class="stats-label">书籍总数</span>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-icon"><i class="fas fa-users"></i></div>
+                            <div class="stats-info">
+                                <span class="stats-value" id="statUsers">0</span>
+                                <span class="stats-label">用户总数</span>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-icon"><i class="fas fa-edit"></i></div>
+                            <div class="stats-info">
+                                <span class="stats-value" id="statSerializing">0</span>
+                                <span class="stats-label">连载中</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="page" id="spider">
-                    <div class="spider-config">
-                        <div class="spider-inputs">
-                            <h4 style="margin-bottom:14px;color:#333;"><i class="fas fa-spider" style="color:#667eea;margin-right:8px;"></i>起点月票榜爬虫</h4>
-                            <div class="spider-field">
-                                <label>爬取页码</label>
-                                <div style="display:flex;gap:10px;align-items:center;">
-                                    <input type="number" id="spiderPageStart" value="1" min="1" max="50" style="width:80px;text-align:center;">
-                                    <span style="color:#999;">至</span>
-                                    <input type="number" id="spiderPageEnd" value="1" min="1" max="50" style="width:80px;text-align:center;">
-                                    <span style="color:#999;font-size:13px;">每页20本，共 <b id="spiderEstimate">20</b> 本</span>
+                    <div class="page-header">
+                        <div class="page-title">
+                            <h2>爬虫工具</h2>
+                            <p class="page-desc">起点月票榜数据爬取</p>
+                        </div>
+                    </div>
+                    <div class="spider-layout">
+                        <div class="spider-config">
+                            <div class="spider-inputs">
+                                <div class="spider-field">
+                                    <label>爬取页码</label>
+                                    <div class="page-range">
+                                        <input type="number" id="spiderPageStart" value="1" min="1" max="50">
+                                        <span>至</span>
+                                        <input type="number" id="spiderPageEnd" value="1" min="1" max="50">
+                                        <span class="estimate">每页20本，共 <b id="spiderEstimate">20</b> 本</span>
+                                    </div>
+                                </div>
+                                <div class="spider-field">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="spiderAutoSave" checked>
+                                        爬取后自动保存到书籍库
+                                    </label>
+                                </div>
+                                <div class="spider-actions">
+                                    <button class="spider-run-btn" onclick="runQidianSpider()">
+                                        <i class="fas fa-play"></i> 开始爬取
+                                    </button>
+                                    <button class="spider-clear-btn" onclick="clearSpider()">
+                                        <i class="fas fa-eraser"></i> 清空结果
+                                    </button>
                                 </div>
                             </div>
-                            <div class="spider-field">
-                                <label>
-                                    <input type="checkbox" id="spiderAutoSave" checked style="margin-right:6px;">
-                                    爬取后自动保存到书籍库
-                                </label>
-                            </div>
-                            <div class="spider-actions">
-                                <button class="spider-run-btn" onclick="runQidianSpider()">
-                                    <i class="fas fa-play"></i> 开始爬取
-                                </button>
-                                <button class="spider-clear-btn" onclick="clearSpider()">
-                                    <i class="fas fa-eraser"></i> 清空结果
-                                </button>
-                            </div>
                         </div>
-                    </div>
-                    <div class="spider-status" id="spiderStatus" style="display:none;">
-                        <span id="spiderStatusText"></span>
-                    </div>
-                    <div class="spider-results" id="spiderResults" style="display:none;">
-                        <div class="spider-results-header">
-                            <h4>爬取结果（共 <span id="spiderCount">0</span> 本）</h4>
+                        <div class="spider-status" id="spiderStatus" style="display:none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span id="spiderStatusText"></span>
                         </div>
-                        <div class="spider-table-wrapper">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>排名</th>
-                                        <th>书名</th>
-                                        <th>作者</th>
-                                        <th>状态</th>
-                                        <th>标签</th>
-                                        <th>简介</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="spiderTableBody"></tbody>
-                            </table>
+                        <div class="spider-results" id="spiderResults" style="display:none;">
+                            <div class="spider-results-header">
+                                <h4>爬取结果（共 <span id="spiderCount">0</span> 本）</h4>
+                            </div>
+                            <div class="spider-table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>排名</th>
+                                            <th>书名</th>
+                                            <th>作者</th>
+                                            <th>状态</th>
+                                            <th>标签</th>
+                                            <th>简介</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="spiderTableBody"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -195,66 +244,80 @@
         </main>
     </div>
 
+    <!-- Detail Modal -->
     <div class="modal" id="detailModal">
+        <div class="modal-overlay" onclick="closeDetailModal()"></div>
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="detailModalTitle">书籍详情</h3>
-                <span class="close-modal" onclick="closeDetailModal()">&times;</span>
+                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
             </div>
-            <div style="padding: 20px;">
-                <div style="margin-bottom: 15px;">
-                    <strong style="color:#666;">作者：</strong>
-                    <span id="detailAuthor"></span>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <strong style="color:#666;">状态：</strong>
-                    <span id="detailStatus" class="status"></span>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <strong style="color:#666;">标签：</strong>
-                    <div id="detailTags" style="display: inline-flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
-                </div>
-                <div>
-                    <strong style="color:#666;">简介：</strong>
-                    <p id="detailIntro" style="margin-top: 8px; color:#666; line-height: 1.6;"></p>
+            <div class="modal-body">
+                <div class="detail-info">
+                    <div class="info-row">
+                        <span class="info-label">作者</span>
+                        <span class="info-value" id="detailAuthor"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">状态</span>
+                        <span class="info-value">
+                            <span id="detailStatus" class="status"></span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">标签</span>
+                        <span class="info-value">
+                            <div id="detailTags" class="tags-list"></div>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">简介</span>
+                        <span class="info-value">
+                            <p id="detailIntro" class="intro-text"></p>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Book Modal -->
     <div class="modal" id="bookModal">
+        <div class="modal-overlay" onclick="closeModal()"></div>
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalTitle">新增书籍</h3>
-                <span class="close-modal" onclick="closeModal()">&times;</span>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
             <form id="bookForm">
-                <div class="form-group">
-                    <label>书名 *</label>
-                    <input type="text" id="bookName" required>
-                </div>
-                <div class="form-group">
-                    <label>作者 *</label>
-                    <input type="text" id="bookAuthor" required>
-                </div>
-                <div class="form-group">
-                    <label>状态</label>
-                    <select id="bookStatus">
-                        <option value="连载">连载</option>
-                        <option value="完结">完结</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>标签</label>
-                    <div id="tagsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; min-height: 32px;"></div>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="bookTagsInput" placeholder="输入标签后按回车添加" style="flex: 1;">
-                        <button type="button" onclick="addTag()" class="add-tag-btn">添加</button>
+                <div class="form-body">
+                    <div class="form-group">
+                        <label>书名 *</label>
+                        <input type="text" id="bookName" required>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>简介</label>
-                    <textarea id="bookIntro" rows="3"></textarea>
+                    <div class="form-group">
+                        <label>作者 *</label>
+                        <input type="text" id="bookAuthor" required>
+                    </div>
+                    <div class="form-group">
+                        <label>状态</label>
+                        <select id="bookStatus">
+                            <option value="连载">连载</option>
+                            <option value="完结">完结</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>标签</label>
+                        <div id="tagsContainer" class="tags-container"></div>
+                        <div class="tag-input-group">
+                            <input type="text" id="bookTagsInput" placeholder="输入标签后按回车添加">
+                            <button type="button" onclick="addTag()" class="add-tag-btn">添加</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>简介</label>
+                        <textarea id="bookIntro" rows="3"></textarea>
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="cancel-btn" onclick="closeModal()">取消</button>
@@ -264,32 +327,36 @@
         </div>
     </div>
 
+    <!-- User Modal -->
     <div class="modal" id="userModal">
+        <div class="modal-overlay" onclick="closeUserModal()"></div>
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="userModalTitle">新增用户</h3>
-                <span class="close-modal" onclick="closeUserModal()">&times;</span>
+                <button class="modal-close" onclick="closeUserModal()">&times;</button>
             </div>
             <form id="userForm">
                 <input type="hidden" id="userId">
-                <div class="form-group">
-                    <label>用户名 *</label>
-                    <input type="text" id="userName" required>
-                </div>
-                <div class="form-group">
-                    <label>手机号</label>
-                    <input type="text" id="userPhone">
-                </div>
-                <div class="form-group">
-                    <label>密码 *</label>
-                    <input type="password" id="userPassword" required>
-                </div>
-                <div class="form-group">
-                    <label>角色</label>
-                    <select id="userRole">
-                        <option value="user">普通用户</option>
-                        <option value="admin">管理员</option>
-                    </select>
+                <div class="form-body">
+                    <div class="form-group">
+                        <label>用户名 *</label>
+                        <input type="text" id="userName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>手机号</label>
+                        <input type="text" id="userPhone">
+                    </div>
+                    <div class="form-group">
+                        <label>密码 *</label>
+                        <input type="password" id="userPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select id="userRole">
+                            <option value="user">普通用户</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="cancel-btn" onclick="closeUserModal()">取消</button>
