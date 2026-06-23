@@ -132,15 +132,15 @@ function createBookCard(book, isFavorited) {
     const card = document.createElement('div');
     card.className = 'book-card';
     card.onclick = () => showBookDetail(book);
-    
     const tags = book.tags ? book.tags.split(',').slice(0, 3) : [];
-    
+    const hasCover = book.cover && book.cover.startsWith('http');
     card.innerHTML = `
         <div class="book-cover">
-            <i class="fas fa-book"></i>
+            ${hasCover ? `<img src="${book.cover}" alt="${book.name}" style="width:100%;height:100%;object-fit:cover;border-radius:6px" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><i class="fas fa-book" style="display:none"></i>` : '<i class="fas fa-book"></i>'}
             <span class="favorite-badge${isFavorited ? ' favorited' : ''}" onclick="event.stopPropagation(); toggleFavoriteCard(${book.id})">
                 <i class="fas fa-heart${isFavorited ? '' : '-o'}"></i>
             </span>
+            ${book.rating ? `<span class="rating-badge">★ ${book.rating}</span>` : ''}
         </div>
         <div class="book-info">
             <h3 class="book-title" data-book-id="${book.id}">${book.name}</h3>
@@ -148,33 +148,50 @@ function createBookCard(book, isFavorited) {
             <div class="book-tags">
                 ${tags.map(tag => `<span class="tag">${tag.trim()}</span>`).join('')}
             </div>
-            <span class="book-status ${book.status === '连载' ? 'serializing' : 'completed'}">${book.status}</span>
+            <span class="book-status completed">${book.status}</span>
         </div>
     `;
-    
     const titleElement = card.querySelector('.book-title');
-    titleElement.onclick = (e) => {
-        e.stopPropagation();
-        showBookDetail(book);
-    };
-    
+    titleElement.onclick = (e) => { e.stopPropagation(); showBookDetail(book); };
     return card;
 }
 
 async function showBookDetail(book) {
     currentBook = book;
     const isFavorited = favorites.includes(book.id);
-    
     document.getElementById('modalTitle').textContent = book.name;
     document.getElementById('modalAuthor').textContent = book.author;
     document.getElementById('modalStatus').textContent = book.status;
-    document.getElementById('modalStatus').className = `status ${book.status === '连载' ? 'serializing' : 'completed'}`;
-    
+    document.getElementById('modalStatus').className = 'status completed';
     const tags = book.tags ? book.tags.split(',').map(tag => `<span class="tag">${tag.trim()}</span>`).join('') : '';
     document.getElementById('modalTags').innerHTML = tags;
-    
-    document.getElementById('modalIntro').textContent = book.intro || '暂无简介';
-    
+    document.getElementById('modalIntro').textContent = book.intro || '暂无出版信息';
+    if (book.rating) {
+        document.getElementById('modalRatingRow').style.display = '';
+        document.getElementById('modalRating').textContent = `★ ${book.rating}（${book.star || ''}星）`;
+    } else {
+        document.getElementById('modalRatingRow').style.display = 'none';
+    }
+    if (book.rating_count) {
+        document.getElementById('modalRatingCountRow').style.display = '';
+        document.getElementById('modalRatingCount').textContent = `${book.rating_count} 人评价`;
+    } else {
+        document.getElementById('modalRatingCountRow').style.display = 'none';
+    }
+    const coverEl = document.getElementById('modalCover');
+    if (book.cover && book.cover.startsWith('http')) {
+        coverEl.innerHTML = `<img src="${book.cover}" alt="${book.name}" style="max-width:150px;border-radius:6px;margin-bottom:12px">`;
+        coverEl.style.display = 'block';
+    } else {
+        coverEl.innerHTML = '';
+        coverEl.style.display = 'none';
+    }
+    const linkEl = document.getElementById('modalLink');
+    if (book.url) {
+        linkEl.innerHTML = `<a href="${book.url}" target="_blank" style="color:#0969da;text-decoration:none;font-size:14px"><i class="fas fa-external-link-alt"></i> 在豆瓣查看</a>`;
+    } else {
+        linkEl.innerHTML = '';
+    }
     const favBtn = document.getElementById('favoriteBtn');
     if (isFavorited) {
         favBtn.classList.add('favorited');
@@ -183,7 +200,6 @@ async function showBookDetail(book) {
         favBtn.classList.remove('favorited');
         favBtn.innerHTML = '<i class="fas fa-heart"></i><span>收藏</span>';
     }
-    
     document.getElementById('bookModal').classList.add('show');
 }
 
@@ -548,16 +564,16 @@ function createRecommendCard(book, isFavorited) {
     const card = document.createElement('div');
     card.className = 'book-card recommend-card';
     card.onclick = () => showBookDetail(book);
-    
     const tags = book.tags ? book.tags.split(',').slice(0, 3) : [];
     const matchTags = book.matched_tags || [];
-    
+    const hasCover = book.cover && book.cover.startsWith('http');
     card.innerHTML = `
         <div class="book-cover">
-            <i class="fas fa-book"></i>
+            ${hasCover ? `<img src="${book.cover}" alt="${book.name}" style="width:100%;height:100%;object-fit:cover;border-radius:6px" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><i class="fas fa-book" style="display:none"></i>` : '<i class="fas fa-book"></i>'}
             <span class="favorite-badge${isFavorited ? ' favorited' : ''}" onclick="event.stopPropagation(); toggleFavoriteCard(${book.id})">
                 <i class="fas fa-heart${isFavorited ? '' : '-o'}"></i>
             </span>
+            ${book.rating ? `<span class="rating-badge">★ ${book.rating}</span>` : ''}
             ${book.showMatchScore ? `<span class="match-score-badge"><i class="fas fa-star"></i> 匹配度 ${Math.min(100, Math.round(book.match_score * 10))}%</span>` : ''}
         </div>
         <div class="book-info">
@@ -569,16 +585,11 @@ function createRecommendCard(book, isFavorited) {
                     return `<span class="tag${isMatched ? ' matched-tag' : ''}">${tag.trim()}</span>`;
                 }).join('')}
             </div>
-            <span class="book-status ${book.status === '连载' ? 'serializing' : 'completed'}">${book.status}</span>
+            <span class="book-status completed">${book.status}</span>
         </div>
     `;
-    
     const titleElement = card.querySelector('.book-title');
-    titleElement.onclick = (e) => {
-        e.stopPropagation();
-        showBookDetail(book);
-    };
-    
+    titleElement.onclick = (e) => { e.stopPropagation(); showBookDetail(book); };
     return card;
 }
 

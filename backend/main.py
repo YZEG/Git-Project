@@ -171,13 +171,42 @@ class UserInDB(UserResponse):
     password: str
 
 def get_db_connection():
-    """获取数据库连接"""
+    """获取数据库连接（qidian_rank，用于用户管理等）"""
     init_db_config()
     try:
         conn = pymysql.connect(**DB_CONFIG)
         return conn
     except pymysql.Error as e:
         raise HTTPException(status_code=500, detail=f"数据库连接失败: {str(e)}")
+
+def get_douban_connection():
+    """获取豆瓣数据库连接（douban_books，用于书籍数据）"""
+    init_db_config()
+    try:
+        cfg = {**DB_CONFIG, 'database': 'douban_books'}
+        conn = pymysql.connect(**cfg)
+        return conn
+    except pymysql.Error as e:
+        raise HTTPException(status_code=500, detail=f"豆瓣数据库连接失败: {str(e)}")
+
+def map_douban_book(row):
+    """将 douban_books.books 行映射为前端期望的字段格式"""
+    if not row:
+        return row
+    return {
+        'id': row['id'],
+        'name': row.get('title', ''),
+        'author': row.get('author', ''),
+        'status': '已出版',
+        'tags': row.get('tags', ''),
+        'intro': row.get('description', ''),
+        'rating': row.get('rating', ''),
+        'rating_count': row.get('rating_count', 0),
+        'cover': row.get('cover', ''),
+        'rank_num': row.get('rank_num', 0),
+        'url': row.get('url', ''),
+        'star': row.get('star', 0),
+    }
 
 def init_db_config():
     """初始化数据库配置（首次调用时提示用户输入）"""
@@ -282,26 +311,17 @@ async def login(login_data: LoginRequest):
 
 # 获取所有书籍（支持分页）
 @app.get("/api/books", response_model=dict, summary="获取书籍列表")
-async def get_books(page: int = 1, page_size: int = 10, current_user: User = Depends(get_current_active_user)):
+async def get_books(page: int = 1, page_size: int = 50, current_user: User = Depends(get_current_active_user)):
     """获取书籍列表（支持分页）"""
-    conn = get_db_connection()
+    conn = get_douban_connection()
     try:
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        
-        # 获取总记录数
         cursor.execute("SELECT COUNT(*) as total FROM books")
         total = cursor.fetchone()["total"]
-        
-        # 计算分页参数
         offset = (page - 1) * page_size
-        
-        # 获取当前页数据
-        cursor.execute("SELECT * FROM books ORDER BY id LIMIT %s OFFSET %s", (page_size, offset))
-        books = cursor.fetchall()
-        
-        # 计算总页数
+        cursor.execute("SELECT * FROM books ORDER BY rank_num LIMIT %s OFFSET %s", (page_size, offset))
+        books = [map_douban_book(b) for b in cursor.fetchall()]
         total_pages = (total + page_size - 1) // page_size
-        
         return {"books": books, "total": total, "total_pages": total_pages, "current_page": page}
     finally:
         conn.close()
@@ -315,125 +335,60 @@ async def search_books(
     status: str = None,
     tag: str = None,
     page: int = 1,
-    page_size: int = 10,
-    sort_by: str = "id",
+    page_size: int = 50,
+    sort_by: str = "rank_num",
     sort_order: str = "asc",
     current_user: User = Depends(get_current_active_user)
 ):
-    """
-    根据多条件搜索书籍
-    
-    参数：
-    - keyword: 关键词（同时搜索书名、作者、标签、简介）
-    - name: 书名（精确匹配）
-    - author: 作者（精确匹配）
-    - status: 状态（连载/完结）
-    - tag: 标签（包含匹配）
-    - page: 页码，默认1
-    - page_size: 每页数量，默认10
-    - sort_by: 排序字段，可选 id/name/author/status，默认id
-    - sort_order: 排序顺序，可选 asc/desc，默认asc
-    """
-    conn = get_db_connection()
+    """根据多条件搜索书籍"""
+    conn = get_douban_connection()
     try:
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        
-        # 构建查询条件
         conditions = []
         params = []
-        
-        # 关键词搜索（模糊匹配书名、作者、标签、简介）
         if keyword and keyword.strip():
-            conditions.append("(name LIKE %s OR author LIKE %s OR tags LIKE %s OR intro LIKE %s)")
-            keyword_pattern = f"%{keyword.strip()}%"
-            params.extend([keyword_pattern, keyword_pattern, keyword_pattern, keyword_pattern])
-        
-        # 书名精确搜索
+            conditions.append("(title LIKE %s OR author LIKE %s OR tags LIKE %s OR publisher LIKE %s)")
+            p = f"%{keyword.strip()}%"
+            params.extend([p, p, p, p])
         if name and name.strip():
-            conditions.append("name = %s")
-            params.append(name.strip())
-        
-        # 作者模糊搜索
+            conditions.append("title LIKE %s")
+            params.append(f"%{name.strip()}%")
         if author and author.strip():
             conditions.append("author LIKE %s")
             params.append(f"%{author.strip()}%")
-        
-        # 状态筛选
-        if status and status.strip() and status.strip() in ["连载", "完结"]:
-            conditions.append("status = %s")
-            params.append(status.strip())
-        
-        # 标签包含搜索
         if tag and tag.strip():
             conditions.append("tags LIKE %s")
             params.append(f"%{tag.strip()}%")
-        
-        # 构建SQL语句
-        if conditions:
-            where_clause = "WHERE " + " AND ".join(conditions)
-        else:
-            where_clause = ""
-        
-        # 验证排序字段
-        valid_sort_fields = ["id", "name", "author", "status"]
-        if sort_by not in valid_sort_fields:
-            sort_by = "id"
-        
-        # 验证排序顺序
+        where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+        valid_sort = {"rank_num", "id", "title", "author", "rating", "rating_count", "star"}
+        if sort_by not in valid_sort:
+            sort_by = "rank_num"
         if sort_order not in ["asc", "desc"]:
             sort_order = "asc"
-        
-        # 先获取总记录数
-        count_sql = f"SELECT COUNT(*) as total FROM books {where_clause}"
-        cursor.execute(count_sql, params)
+        cursor.execute(f"SELECT COUNT(*) as total FROM books {where_clause}", params)
         total = cursor.fetchone()["total"]
-        
-        # 计算分页参数
         offset = (page - 1) * page_size
-        
-        # 获取当前页数据
-        query_sql = f"""
-            SELECT * FROM books {where_clause} 
-            ORDER BY {sort_by} {sort_order} 
-            LIMIT %s OFFSET %s
-        """
-        params.extend([page_size, offset])
-        cursor.execute(query_sql, params)
-        books = cursor.fetchall()
-        
-        # 计算总页数
+        cursor.execute(f"SELECT * FROM books {where_clause} ORDER BY {sort_by} {sort_order} LIMIT %s OFFSET %s",
+                        params + [page_size, offset])
+        books = [map_douban_book(b) for b in cursor.fetchall()]
         total_pages = (total + page_size - 1) // page_size
-        
-        return {
-            "books": books, 
-            "total": total, 
-            "total_pages": total_pages, 
-            "current_page": page,
-            "search_params": {
-                "keyword": keyword,
-                "name": name,
-                "author": author,
-                "status": status,
-                "tag": tag
-            }
-        }
+        return {"books": books, "total": total, "total_pages": total_pages, "current_page": page,
+                "search_params": {"keyword": keyword, "name": name, "author": author, "status": status, "tag": tag}}
     finally:
         conn.close()
 
 # 获取单本书籍
-@app.get("/api/books/{book_id}", response_model=BookResponse, summary="获取单本书籍")
+@app.get("/api/books/{book_id}", summary="获取单本书籍")
 async def get_book(book_id: int, current_user: User = Depends(get_current_active_user)):
     """根据ID获取书籍详情"""
-    conn = get_db_connection()
+    conn = get_douban_connection()
     try:
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("SELECT * FROM books WHERE id = %s", (book_id,))
         book = cursor.fetchone()
-        
         if not book:
             raise HTTPException(status_code=404, detail="书籍不存在")
-        
-        return book
+        return map_douban_book(book)
     finally:
         conn.close()
 
@@ -988,12 +943,11 @@ async def get_hot_tags(
     if cached:
         return cached
     
-    conn = get_db_connection()
+    conn = get_douban_connection()
     try:
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
             cursor.execute("SELECT tags FROM books WHERE tags IS NOT NULL AND tags != ''")
             results = cursor.fetchall()
-            
             tag_counts = {}
             for row in results:
                 tags_str = row['tags']
@@ -1001,16 +955,9 @@ async def get_hot_tags(
                     tags = [t.strip() for t in tags_str.split(',') if t.strip()]
                     for tag in tags:
                         tag_counts[tag] = tag_counts.get(tag, 0) + 1
-            
             sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)[:limit]
-            
             tags_list = [{"name": tag, "count": count} for tag, count in sorted_tags]
-            
-            result = {
-                "tags": tags_list,
-                "total": len(tags_list)
-            }
-            
+            result = {"tags": tags_list, "total": len(tags_list)}
             set_cache(cache_key, result, ttl=600)
             return result
     finally:
@@ -1028,7 +975,7 @@ async def recommend_by_tags(
     if not user_tags:
         raise HTTPException(status_code=400, detail="请至少提供一个标签")
     
-    conn = get_db_connection()
+    conn = get_douban_connection()
     try:
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
             like_conditions = []
@@ -1036,19 +983,16 @@ async def recommend_by_tags(
             for tag in user_tags:
                 like_conditions.append("tags LIKE %s")
                 params.append(f"%{tag}%")
-            
             sql = f"SELECT * FROM books WHERE tags IS NOT NULL AND tags != '' AND ({' OR '.join(like_conditions)})"
             cursor.execute(sql, params)
             candidate_books = cursor.fetchall()
-            
             scored_books = []
-            for book in candidate_books:
+            for raw_book in candidate_books:
+                book = map_douban_book(raw_book)
                 book_tags_str = book.get('tags', '') or ''
                 book_tags = [t.strip() for t in book_tags_str.split(',') if t.strip()]
-                
                 match_score = 0
                 matched_tags = []
-                
                 for user_tag in user_tags:
                     for book_tag in book_tags:
                         if user_tag == book_tag:
@@ -1058,7 +1002,6 @@ async def recommend_by_tags(
                             match_score += 5
                             if book_tag not in matched_tags:
                                 matched_tags.append(book_tag)
-                
                 if match_score > 0:
                     scored_books.append({
                         **book,
@@ -1066,16 +1009,8 @@ async def recommend_by_tags(
                         'matched_tags': list(set(matched_tags)),
                         'match_count': len(set(matched_tags))
                     })
-            
             scored_books.sort(key=lambda x: (x['match_score'], x['match_count']), reverse=True)
-            
-            recommended = scored_books[:limit]
-            
-            return {
-                "books": recommended,
-                "total": len(scored_books),
-                "query_tags": user_tags
-            }
+            return {"books": scored_books[:limit], "total": len(scored_books), "query_tags": user_tags}
     finally:
         conn.close()
 

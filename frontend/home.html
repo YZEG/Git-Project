@@ -71,10 +71,8 @@
                         <i class="fas fa-search"></i>
                         <input type="text" id="searchInput" placeholder="搜索小说名称、作者...">
                     </div>
-                    <select id="statusFilter">
-                        <option value="">全部状态</option>
-                        <option value="连载">连载中</option>
-                        <option value="完结">已完结</option>
+                    <select id="statusFilter" style="display:none">
+                        <option value="">全部</option>
                     </select>
                     <button class="search-btn" onclick="searchBooks()">
                         <i class="fas fa-search"></i>
@@ -153,6 +151,7 @@
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
             <div class="modal-body">
+                <div class="modal-cover" id="modalCover"></div>
                 <div class="modal-info">
                     <div class="info-row">
                         <span class="info-label">作者</span>
@@ -164,12 +163,21 @@
                             <span class="status" id="modalStatus"></span>
                         </span>
                     </div>
+                    <div class="info-row" id="modalRatingRow">
+                        <span class="info-label">评分</span>
+                        <span class="info-value" id="modalRating"></span>
+                    </div>
+                    <div class="info-row" id="modalRatingCountRow">
+                        <span class="info-label">评价人数</span>
+                        <span class="info-value" id="modalRatingCount"></span>
+                    </div>
                 </div>
                 <div class="modal-tags" id="modalTags"></div>
                 <div class="modal-intro">
-                    <h4>简介</h4>
+                    <h4>内容简介</h4>
                     <p id="modalIntro"></p>
                 </div>
+                <div class="modal-link" id="modalLink"></div>
                 <div class="modal-actions">
                     <button class="action-btn favorite-btn" id="favoriteBtn" onclick="toggleFavorite()">
                         <i class="fas fa-heart"></i>

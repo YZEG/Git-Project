@@ -113,20 +113,19 @@ async function loadBooks(page = 1) {
 function renderBooks(books) {
     const tbody = document.getElementById('booksTableBody');
     tbody.innerHTML = '';
-
     if (books.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#656d76;padding:30px;">暂无书籍</td></tr>';
         return;
     }
-
     books.forEach(book => {
-        const tags = book.tags ? book.tags.split(',').map(tag => `<span class="table-tag">${tag.trim()}</span>`).join('') : '-';
+        const tags = book.tags ? book.tags.split(',').slice(0, 3).map(tag => `<span class="table-tag">${tag.trim()}</span>`).join('') : '-';
+        const ratingDisplay = book.rating ? `★ ${book.rating}` : '-';
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${book.id}</td>
+            <td>${book.rank_num || book.id}</td>
             <td><span class="book-name-link" onclick="showBookDetail(${book.id})">${book.name}</span></td>
             <td>${book.author}</td>
-            <td><span class="status-badge ${book.status === '连载' ? 'serializing' : 'completed'}">${book.status}</span></td>
+            <td>${ratingDisplay}</td>
             <td style="display: flex; flex-wrap: wrap; gap: 4px;">${tags}</td>
             <td>
                 <div class="action-btns">
@@ -143,20 +142,20 @@ async function showBookDetail(bookId) {
     try {
         const token = localStorage.getItem('token');
         const response = await fetch(`${API_BASE_URL}/api/books/${bookId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-
         if (response.ok) {
             const book = await response.json();
             document.getElementById('detailModalTitle').textContent = book.name;
             document.getElementById('detailAuthor').textContent = book.author;
             document.getElementById('detailStatus').textContent = book.status;
-            document.getElementById('detailStatus').className = `status ${book.status === '连载' ? 'serializing' : 'completed'}`;
+            document.getElementById('detailStatus').className = 'status completed';
             document.getElementById('detailTags').innerHTML = book.tags ?
                 book.tags.split(',').map(tag => `<span class="detail-tag">${tag.trim()}</span>`).join('') : '<span style="color:#656d76;">无</span>';
-            document.getElementById('detailIntro').textContent = book.intro || '暂无简介';
+            let intro = book.intro || '';
+            if (book.rating) intro += `\n评分: ★ ${book.rating}（${book.rating_count || 0}人评价）`;
+            if (book.url) intro += `\n豆瓣: ${book.url}`;
+            document.getElementById('detailIntro').textContent = intro || '暂无简介';
             document.getElementById('detailModal').classList.add('show');
         }
     } catch (error) {
